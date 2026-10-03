@@ -1,0 +1,40 @@
+node_modules/
+\n+# Local credentials and environment settings
+.env.*
+!.env.example
+.aws/
+.ssh/
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+\n+# Local assistant configuration and editor state
+.agents/
+.codex/
+.vscode/
+.idea/
+\n+# Runtime data, exports, and database backups (keep schema/seed SQL)
+data/
+backups/
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+*.sql.gz
+*.dump
+*.bak
+\n+# Generated output
+coverage/
+.cache/
+tmp/
+temp/
+Thumbs.db
+.DS_Store
+data/*.db
+data/*.db-shm
+data/*.db-wal
+.env
+*.log

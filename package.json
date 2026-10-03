@@ -1,0 +1,22 @@
+{
+  "name": "n01sport-booking-mysql",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "N01SPORT - Website quản lý và đặt sân thể thao dùng Node.js, MySQL, HTML, CSS và JavaScript",
+  "scripts": {
+    "db:init": "node database/setup.js",
+    "db:reset": "node database/setup.js --reset",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check server.js && node --check public/js/app.js && node --check database/setup.js && node --check database/migrations.js && node --check lib/offline-bookings.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.11.5"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

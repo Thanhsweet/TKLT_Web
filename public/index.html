@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="N01SPORT giúp tìm và đặt sân thể thao nhanh chóng, minh bạch và an toàn.">
+  <meta name="theme-color" content="#fffbeb">
+  <title>N01SPORT — Đặt sân, vào cuộc</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15A7.5 7.5 0 1 1 4 11.5a7.5 7.5 0 0 1 15 0Z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4V6Z"/><path d="M12 8v8"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16M8 8h2m4 0h2m-8 4h2m4 0h2m-8 4h2m4 0h2M2 21h20"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5v16h5m4-4 4-4-4-4m4 4H9"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 5.7a5.5 5.5 0 0 0-7.8 0L12 6.8l-1.1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 22l8.8-8.5a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><path d="m14 6 4-4 4 4-4 4m-4-4 4 4M4 20l8-8m-6-2-4 4 4 4 4-4"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#home" aria-label="N01SPORT - Trang chủ">
+        <span class="brand-mark">N<span>01</span></span>
+        <span class="brand-text">SPORT<small>Đặt sân, vào cuộc</small></span>
+      </a>
+      <button class="icon-button mobile-menu" id="menu-button" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Mở menu">
+        <svg><use href="#i-menu"/></svg>
+      </button>
+      <nav class="main-nav" id="main-nav" aria-label="Điều hướng chính">
+        <a href="#courts">Tìm sân</a>
+        <a href="#how-it-works">Cách hoạt động</a>
+        <button class="nav-link hidden" id="dashboard-link" type="button">Lịch của tôi</button>
+        <button class="nav-link hidden" id="management-link" type="button">Khu vực làm việc</button>
+        <button class="nav-link hidden" id="logout-link" type="button">Đăng xuất</button>
+      </nav>
+      <div class="header-actions">
+        <button class="button button-ghost" id="login-button" type="button">
+          <svg><use href="#i-user"/></svg><span>Đăng nhập</span>
+        </button>
+        <button class="profile-button hidden" id="profile-button" type="button" aria-label="Mở tài khoản">
+          <span class="avatar" id="profile-avatar">N</span><span id="profile-name">Tài khoản</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Hơn 120 sân đã xác thực</p>
+          <h1>Tìm sân phù hợp.<br><em>Vào cuộc đúng giờ.</em></h1>
+          <p class="hero-lead">So sánh giá, xem lịch trống và đặt sân thể thao chỉ trong vài phút. Không gọi điện, không chờ xác nhận thủ công.</p>
+          <div class="hero-proof">
+            <div class="proof-avatars" aria-hidden="true"><span>MA</span><span>TH</span><span>QN</span></div>
+            <p><strong>4,9/5</strong> từ cộng đồng người chơi</p>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Minh họa sân thể thao">
+          <div class="court-map">
+            <div class="field-line center-line"></div><div class="field-line center-circle"></div>
+            <div class="field-line goal-left"></div><div class="field-line goal-right"></div>
+            <span class="player p1"></span><span class="player p2"></span><span class="player p3"></span><span class="ball"></span>
+          </div>
+          <div class="availability-card"><span class="pulse"></span><div><strong>18 sân còn trống</strong><small>Tối nay tại TP.HCM</small></div></div>
+        </div>
+      </div>
+
+      <div class="container search-wrap">
+        <form class="search-panel" id="search-form">
+          <label>
+            <span>Môn thể thao</span>
+            <select id="sport-select" name="sport"><option value="">Tất cả bộ môn</option></select>
+          </label>
+          <label>
+            <span>Khu vực</span>
+            <select id="district-select" name="district"><option value="">Toàn TP.HCM</option></select>
+          </label>
+          <label>
+            <span>Ngày chơi</span>
+            <input id="date-input" name="date" type="date" required>
+          </label>
+          <label>
+            <span>Tìm theo tên</span>
+            <input id="query-input" name="q" type="search" placeholder="Tên sân hoặc địa chỉ">
+          </label>
+          <button class="button button-primary search-button" type="submit">
+            <svg><use href="#i-search"/></svg><span>Tìm sân</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="sport-strip" aria-label="Chọn nhanh môn thể thao">
+      <div class="container sport-chips" id="sport-chips"></div>
+    </section>
+
+    <section class="section courts-section" id="courts">
+      <div class="container">
+        <div class="section-heading">
+          <div><p class="eyebrow">LỊCH TRỐNG CẬP NHẬT TỨC THỜI</p><h2>Sân nổi bật gần bạn</h2></div>
+          <div class="result-meta"><strong id="result-count">0</strong> sân phù hợp</div>
+        </div>
+        <div class="filter-summary hidden" id="filter-summary"></div>
+        <div class="court-grid" id="court-grid" aria-live="polite"></div>
+        <div class="empty-state hidden" id="empty-state">
+          <svg><use href="#i-search"/></svg><h3>Chưa tìm thấy sân phù hợp</h3><p>Hãy thử đổi khu vực, bộ môn hoặc ngày chơi.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section steps-section" id="how-it-works">
+      <div class="container">
+        <div class="section-heading narrow"><div><p class="eyebrow">3 BƯỚC ĐƠN GIẢN</p><h2>Từ ý định đến trận đấu</h2></div></div>
+        <div class="steps-grid">
+          <article><span class="step-number">01</span><div class="step-icon"><svg><use href="#i-search"/></svg></div><h3>Tìm sân</h3><p>Lọc theo môn, khu vực, ngày và ngân sách.</p></article>
+          <article><span class="step-number">02</span><div class="step-icon"><svg><use href="#i-calendar"/></svg></div><h3>Chọn khung giờ</h3><p>Xem lịch trống và giá theo từng giờ ngay lập tức.</p></article>
+          <article><span class="step-number">03</span><div class="step-icon"><svg><use href="#i-check"/></svg></div><h3>Xác nhận</h3><p>Thanh toán an toàn, nhận mã đặt sân và vào cuộc.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section assurance-section">
+      <div class="container assurance-grid">
+        <div><p class="eyebrow light">CAM KẾT N01SPORT</p><h2>Đặt sân an tâm,<br>chơi hết mình.</h2></div>
+        <div class="assurance-list">
+          <article><svg><use href="#i-shield"/></svg><div><h3>Thông tin minh bạch</h3><p>Giá cuối cùng hiển thị trước khi xác nhận.</p></div></article>
+          <article><svg><use href="#i-clock"/></svg><div><h3>Lịch trống tin cậy</h3><p>Kiểm tra trùng lịch tại thời điểm đặt.</p></div></article>
+          <article><svg><use href="#i-ticket"/></svg><div><h3>Hỗ trợ linh hoạt</h3><p>Theo dõi, thanh toán hoặc hủy trong tài khoản.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dashboard-section hidden" id="dashboard-section">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow">TÀI KHOẢN</p><h2>Lịch đặt sân của tôi</h2></div><div class="points-card"><span>Điểm thưởng</span><strong id="loyalty-points">0</strong></div></div>
+        <div class="booking-list" id="booking-list"></div>
+      </div>
+    </section>
+
+    <section class="section management-section hidden" id="management-section">
+      <div class="container">
+        <div class="section-heading"><div><p class="eyebrow" id="management-eyebrow">VẬN HÀNH</p><h2 id="management-title">Bảng điều khiển</h2></div><div class="heading-actions"><label class="date-control hidden" id="staff-date-control"><span>Ngày đặt sân</span><input id="staff-work-date" type="date"></label><button class="button button-primary hidden" id="staff-booking-create" type="button"><svg><use href="#i-plus"/></svg>Đặt sân cho khách</button><button class="button button-primary hidden" id="management-create" type="button"><svg><use href="#i-plus"/></svg><span>Thêm mới</span></button><button class="button button-outline" id="refresh-management" type="button">Làm mới dữ liệu</button></div></div>
+        <div class="management-tabs" id="management-tabs" role="tablist" aria-label="Nhóm chức năng quản lý"></div>
+        <div class="metrics-grid" id="metrics-grid"></div>
+        <div class="management-grid"><div class="panel"><div class="panel-heading"><h3 id="table-title">Đơn gần đây</h3><span>Cập nhật theo dữ liệu thực</span></div><div class="table-wrap" id="management-table"></div></div><aside class="panel" id="side-panel"></aside></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div><a class="brand footer-brand" href="#home"><span class="brand-mark">N<span>01</span></span><span class="brand-text">SPORT<small>Đặt sân, vào cuộc</small></span></a><p>Nền tảng kết nối người chơi và sân thể thao bằng trải nghiệm đặt lịch rõ ràng, nhanh chóng.</p></div>
+      <div><h3>Khám phá</h3><a href="#courts">Tìm sân</a><a href="#how-it-works">Cách hoạt động</a></div>
+      <div><h3>Hỗ trợ</h3><a href="mailto:hotro@n01sport.vn">hotro@n01sport.vn</a><a href="tel:19000101">1900 0101</a></div>
+      <div><h3>Giờ hỗ trợ</h3><p>06:00 – 23:00<br>Tất cả các ngày</p></div>
+    </div>
+    <div class="container footer-bottom"><span>© 2026 N01SPORT</span><span>Thiết kế cho trải nghiệm thể thao liền mạch</span></div>
+  </footer>
+
+  <dialog class="dialog" id="login-dialog">
+    <form class="dialog-card login-card" id="login-form" method="dialog">
+      <button class="icon-button dialog-close" type="button" data-close="login-dialog" aria-label="Đóng"><svg><use href="#i-close"/></svg></button>
+      <p class="eyebrow">CHÀO MỪNG TRỞ LẠI</p><h2>Đăng nhập N01SPORT</h2><p class="dialog-lead">Chọn tài khoản demo hoặc nhập thông tin của bạn.</p>
+      <label><span>Email</span><input id="login-email" name="email" type="email" autocomplete="email" required placeholder="email@example.com"></label>
+      <label><span>Mật khẩu</span><input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Tối thiểu 8 ký tự"></label>
+      <p class="form-error hidden" id="login-error"></p>
+      <button class="button button-primary button-full" type="submit">Đăng nhập</button>
+      <button class="text-action" id="open-register" type="button">Chưa có tài khoản? Đăng ký khách hàng</button>
+      <div class="demo-accounts">
+        <p>Dùng nhanh tài khoản demo</p>
+        <button type="button" data-demo="customer"><span>Khách hàng</span><small>khach@n01sport.vn</small></button>
+        <button type="button" data-demo="owner"><span>Chủ sân</span><small>chusan@n01sport.vn</small></button>
+        <button type="button" data-demo="admin"><span>Quản trị</span><small>admin@n01sport.vn</small></button>
+        <button type="button" data-demo="receptionist"><span>Lễ tân</span><small>letan@n01sport.vn</small></button>
+        <button type="button" data-demo="technician"><span>Kỹ thuật</span><small>kythuat@n01sport.vn</small></button>
+        <button type="button" data-demo="cleaner"><span>Vệ sinh</span><small>vesinh@n01sport.vn</small></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="register-dialog">
+    <form class="dialog-card login-card" id="register-form" method="dialog">
+      <button class="icon-button dialog-close" type="button" data-close="register-dialog" aria-label="Đóng"><svg><use href="#i-close"/></svg></button>
+      <p class="eyebrow">TẠO TÀI KHOẢN</p><h2>Đăng ký khách hàng</h2><p class="dialog-lead">Tài khoản dùng để lưu lịch đặt sân, thanh toán và điểm thưởng.</p>
+      <label><span>Họ và tên</span><input id="register-name" type="text" autocomplete="name" required minlength="2"></label>
+      <label><span>Email</span><input id="register-email" type="email" autocomplete="email" required></label>
+      <label><span>Số điện thoại</span><input id="register-phone" type="tel" autocomplete="tel"></label>
+      <label><span>Mật khẩu</span><input id="register-password" type="password" autocomplete="new-password" required minlength="8"><small class="field-hint">Tối thiểu 8 ký tự.</small></label>
+      <p class="form-error hidden" id="register-error" role="alert"></p>
+      <button class="button button-primary button-full" type="submit">Tạo tài khoản</button>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="entity-dialog">
+    <form class="dialog-card entity-card" id="entity-form" method="dialog">
+      <button class="icon-button dialog-close" type="button" data-close="entity-dialog" aria-label="Đóng"><svg><use href="#i-close"/></svg></button>
+      <p class="eyebrow" id="entity-eyebrow">QUẢN LÝ</p><h2 id="entity-title">Thêm mới</h2>
+      <div class="entity-fields" id="entity-fields"></div>
+      <p class="form-error hidden" id="entity-error" role="alert"></p>
+      <button class="button button-primary button-full" type="submit">Lưu dữ liệu</button>
+    </form>
+  </dialog>
+
+  <dialog class="dialog booking-dialog" id="booking-dialog">
+    <div class="dialog-card booking-card">
+      <button class="icon-button dialog-close" type="button" data-close="booking-dialog" aria-label="Đóng"><svg><use href="#i-close"/></svg></button>
+      <div class="booking-head"><p class="eyebrow" id="booking-eyebrow">ĐẶT SÂN TRỰC TUYẾN</p><h2 id="booking-court-name">Chọn khung giờ</h2><p id="booking-venue"></p></div>
+      <div class="offline-booking-fields hidden" id="offline-booking-fields">
+        <label><span>Sân tại cơ sở được phân công</span><select id="offline-court"></select></label>
+        <label><span>Họ tên khách</span><input id="guest-name" type="text" minlength="2" maxlength="150" required placeholder="Nhập tên khách"></label>
+        <label><span>Số điện thoại khách</span><input id="guest-phone" type="tel" maxlength="20" required placeholder="VD: 0901234567"></label>
+        <label><span>Thu tiền tại quầy</span><select id="offline-payment"><option value="unpaid">Chưa thu tiền — thu sau</option><option value="cash">Đã nhận tiền mặt</option><option value="bank_transfer">Đã nhận chuyển khoản</option></select></label>
+      </div>
+      <div class="booking-layout">
+        <div><label class="date-control"><span>Ngày chơi</span><input id="booking-date" type="date"></label><h3 class="slot-heading">Khung giờ còn trống</h3><div class="slot-grid" id="slot-grid"></div></div>
+        <aside class="order-summary"><h3>Tóm tắt</h3><dl><div><dt>Sân</dt><dd id="summary-court">—</dd></div><div><dt>Thời gian</dt><dd id="summary-time">Chưa chọn</dd></div><div><dt>Giá sân</dt><dd id="summary-subtotal">—</dd></div></dl><label id="promotion-field"><span>Mã ưu đãi</span><input id="promotion-code" type="text" placeholder="VD: CHAOSAN"></label><label><span>Ghi chú</span><textarea id="booking-note" rows="3" placeholder="Yêu cầu thêm cho chủ sân"></textarea></label><div class="summary-total"><span>Tạm tính</span><strong id="summary-total">—</strong></div><button class="button button-primary button-full" id="confirm-booking" type="button" disabled>Xác nhận đặt sân</button><small class="summary-note" id="booking-summary-note">Bạn có thể thanh toán mô phỏng sau khi tạo đơn.</small></aside>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="dialog" id="success-dialog">
+    <div class="dialog-card success-card">
+      <div class="success-icon"><svg><use href="#i-check"/></svg></div><p class="eyebrow">ĐẶT SÂN THÀNH CÔNG</p><h2 id="success-code">N01-...</h2><p id="success-detail">Đơn đã được tạo và đang chờ thanh toán.</p><div class="success-actions"><button class="button button-primary" id="pay-now" type="button">Thanh toán mô phỏng</button><button class="button button-outline" data-close="success-dialog" type="button">Xem sau</button></div>
+    </div>
+  </dialog>
+
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
