@@ -10,7 +10,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test tests/*.test.js",
-    "check": "node --check server.js && node --check public/js/app.js && node --check database/setup.js && node --check database/migrations.js && node --check lib/offline-bookings.js"
+    "check": "node scripts/check.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

@@ -56,7 +56,14 @@ _Web/
 ├── lib/security.js
 ├── public/
 │   ├── css/styles.css
-│   ├── js/app.js
+│   ├── js/
+│   │   ├── app.js        # Khởi tạo và gắn sự kiện
+│   │   ├── core/         # State, API, DOM, định dạng
+│   │   ├── auth.js       # Đăng nhập, đăng ký, đăng xuất
+│   │   ├── session.js    # Vai trò và thông tin phiên
+│   │   ├── courts.js     # Tìm sân và yêu thích
+│   │   ├── bookings.js   # Đặt sân online/tại quầy, lịch sử
+│   │   └── management/  # Dashboard, form và view từng vai trò
 │   ├── favicon.svg
 │   └── index.html
 ├── tests/project.test.js
@@ -64,6 +71,8 @@ _Web/
 ├── server.js
 └── package.json
 ```
+
+Xem [hướng dẫn cấu trúc frontend](docs/frontend.md) để biết chức năng nằm ở file nào và cách thêm module.
 
 ## Cách 1: chạy bằng Docker, khuyến nghị
 

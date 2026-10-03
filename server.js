@@ -210,7 +210,7 @@ function serveStatic(res, url) {
   if (!filePath.startsWith(publicDir)) return json(res, 403, { error: 'Đường dẫn không hợp lệ.' });
   if (!existsSync(filePath) || statSync(filePath).isDirectory()) filePath = join(publicDir, 'index.html');
   const ext = extname(filePath);
-  res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600' });
+  res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream', 'Cache-Control': ['.html', '.js', '.css'].includes(ext) ? 'no-cache' : 'public, max-age=3600' });
   res.end(readFileSync(filePath));
 }
 

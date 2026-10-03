@@ -39,11 +39,12 @@ test('backend dùng pool MySQL, transaction và khóa chống trùng lịch', ()
 
 test('giao diện có đăng ký và khu vực làm việc theo vai trò', () => {
   const html = read('public/index.html');
-  const app = read('public/js/app.js');
+  const session = read('public/js/session.js');
+  const courts = read('public/js/courts.js');
   assert.match(html, /register-dialog/);
   assert.match(html, /management-tabs/);
-  assert.match(app, /receptionist/);
-  assert.match(app, /technician/);
-  assert.match(app, /cleaner/);
-  assert.match(app, /toggleFavorite/);
+  assert.match(session, /receptionist/);
+  assert.match(session, /technician/);
+  assert.match(session, /cleaner/);
+  assert.match(courts, /toggleFavorite/);
 });
