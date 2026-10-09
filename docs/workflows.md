@@ -1,88 +1,29 @@
-# Workflow hệ thống N01SPORT
+# Workflow v3
 
-## WF01 và WF02: đặt sân, giữ chỗ và thanh toán
+## Đặt và thanh toán
 
-```mermaid
-flowchart TD
-  A[Khách chọn sân và giờ] --> B[Kiểm tra lịch và bảo trì]
-  B -->|Bị trùng| A
-  B -->|Còn trống| C[Tính giá và khuyến mãi]
-  C --> D[Khóa giao dịch và kiểm tra lại]
-  D --> E[Tạo booking giữ 10 phút]
-  E --> F[Hiển thị QR mô phỏng]
-  F -->|Thanh toán hợp lệ| G[Xác nhận booking]
-  F -->|Hết hạn| H[Giải phóng slot]
-```
+Tìm/lọc/chi tiết → chọn slot → server kiểm tra giờ/trạng thái/bảo trì → khóa sân trong transaction → tính giá/khuyến mãi → booking pending/payment → QR → webhook kiểm tra khóa/mã/tài khoản/tiền/hạn → confirmed. Hết hạn chưa thanh toán: expired/payment failed, nhả lịch.
 
-## Lễ tân đặt sân tại quầy
+HLV định kỳ: khóa sân → kiểm tra tất cả 2–12 buổi → tạo series/booking/lớp → commit tất cả hoặc rollback. Thanh toán từng buổi; buổi chưa trả hết hạn riêng.
 
-Lễ tân chọn **Đặt sân cho khách**, chọn sân thuộc cơ sở được phân công, nhập tên/số điện thoại và chọn ngày/khung giờ. Backend khóa sân và phân công, kiểm tra giờ mở cửa, trùng lịch và bảo trì, tính giá theo khung giờ rồi tạo booking `confirmed` không có thời hạn giữ chỗ. Khách không cần tài khoản. Có thể ghi nhận đã nhận tiền mặt/chuyển khoản khi tạo, hoặc để chưa thu và ghi nhận sau ở lịch lễ tân. Mỗi lần thu tiền được khóa giao dịch để ngăn ghi nhận lặp. Đơn có trong lịch theo ngày và báo cáo chủ sân; người thao tác được ghi vào audit log.
+## Hủy và hoàn
 
-## WF03 và WF07: check-in, hoàn tất và vệ sinh
+Pending chưa trả → cancelled. Confirmed → cancel_requested/refund pending, vẫn giữ slot. Từ chối → confirmed. Duyệt → cancelled/payment refund_pending. Chủ sân chuyển khoản thật → nhập chứng từ → refunded. Gửi yêu cầu trước giờ bắt đầu; xử lý dịch vụ trước khi hủy.
 
-```mermaid
-flowchart TD
-  A[Lễ tân tra booking] --> B{Đã xác nhận?}
-  B -->|Không| C[Thông báo không hợp lệ]
-  B -->|Có| D[Check-in]
-  D --> E[Sân đang sử dụng]
-  E --> F[Lễ tân hoàn tất]
-  F --> G[Tạo nhiệm vụ vệ sinh]
-  G --> H[Nhân viên vệ sinh bắt đầu]
-  H -->|Hoàn tất| I[Sân sẵn sàng]
-  H -->|Có sự cố| J[Chuyển yêu cầu kỹ thuật]
-```
+## Dịch vụ và thuê
 
-## WF04 và WF05: dịch vụ phát sinh
+Booking confirmed/checked_in → chọn hàng → khóa theo ID → kiểm tra/trừ tồn khả dụng → pending. Thu tiền/chứng từ → paid. Bàn giao → delivered; không thuê thành completed. Thuê nhận lại → tăng tồn số nhận lại, ghi mất/hỏng/phí/chứng từ → completed. Không cộng tồn lần hai. Hủy hoặc pending quá 30 phút → trả tồn/cancelled.
 
-```mermaid
-flowchart TD
-  A[Lễ tân chọn booking] --> B[Chọn dịch vụ hoặc đồ thuê]
-  B --> C{Còn tồn kho?}
-  C -->|Không| D[Đổi lựa chọn]
-  C -->|Có| E[Lưu số lượng và đơn giá]
-  E --> F{Loại dịch vụ}
-  F -->|Bán| G[Giao hàng và giảm tồn]
-  F -->|Thuê| H[Ghi nhận bàn giao và trả đồ]
-  F -->|Kỹ thuật| I[Tạo yêu cầu kỹ thuật]
-```
+## Sử dụng và vệ sinh
 
-## WF06: bảo trì và chặn lịch
+Confirmed → lễ tân check-in trong 30 phút trước giờ → checked_in → xử lý xong dịch vụ → completed → cộng điểm một lần/tạo vệ sinh. Khách vắng ghi sau giờ bắt đầu. Vệ sinh pending → assigned → in_progress → completed → sân ready. Blocked tạo yêu cầu kỹ thuật và thông báo chủ sân.
 
-```mermaid
-flowchart TD
-  A[Báo sự cố] --> B[Kỹ thuật nhận việc]
-  B --> C[Chủ sân duyệt khoảng bảo trì]
-  C --> D[Chặn booking mới bị trùng]
-  D --> E[Kỹ thuật xử lý]
-  E --> F[Chủ sân đóng yêu cầu]
-  F --> G[Mở lại sân]
-```
+## Kỹ thuật, điểm, hỗ trợ, backup
 
-## WF09, WF10 và WF14: quản lý dữ liệu
+Sự cố → open/assigned → nhận → in_progress → resolved hoặc waiting_approval/thời gian đề xuất. Chủ sân phân công/duyệt, chỉ chặn khi không trùng booking giữ/đã xác nhận. Closed mở block gắn yêu cầu; block riêng tắt ở Lịch chặn.
 
-```mermaid
-flowchart TD
-  A[Người có quyền đăng nhập] --> B{Vai trò}
-  B -->|Chủ sân| C[Quản lý sân, giá, dịch vụ, nhân viên]
-  B -->|Quản trị| D[Quản lý tài khoản và địa điểm]
-  C --> E[Kiểm tra dữ liệu và phạm vi sở hữu]
-  D --> E
-  E --> F[Lưu thay đổi]
-  F --> G[Ghi audit log]
-```
+Hoàn booking → điểm/lịch sử. Đổi ưu đãi → khóa reward/user → trừ điểm + mã cá nhân một lượt/30 ngày.
 
-## WF12 và WF13: hủy, hoàn tiền và tích điểm
+Ticket → chủ sân cơ sở/admin → trao đổi/trạng thái → thông báo khách.
 
-```mermaid
-flowchart TD
-  A[Khách gửi yêu cầu hủy] --> B{Đã thanh toán?}
-  B -->|Chưa| C[Hủy ngay và giải phóng slot]
-  B -->|Rồi| D[Chủ sân xét duyệt]
-  D -->|Từ chối| E[Giữ booking]
-  D -->|Duyệt| F[Hủy booking và chờ hoàn]
-  F --> G[Ghi nhận đã hoàn tiền]
-  H[Booking hoàn tất] --> I[Cộng điểm một lần]
-```
-
-Workflow HLV đặt định kỳ được hỗ trợ ở mô hình `booking_series`, `bookings` và `coach_schedules`. Bản demo chưa mở form tạo chuỗi để tránh làm luồng đặt sân cơ bản quá phức tạp.
+Sao lưu queued → worker running → file SQL/SHA-256 → completed hoặc failed. Phục hồi CLI vào DB mới, kiểm tra rồi chuyển app trong đợt bảo trì.
