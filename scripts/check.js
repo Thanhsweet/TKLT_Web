@@ -1,18 +1,18 @@
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
-
-function javascriptFiles(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? javascriptFiles(path) : path.endsWith('.js') ? [path] : [];
-  });
+import { readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+function check(dir) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (["node_modules", "var", "uploads", ".git", "test-results"].includes(e.name)) continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) check(p);
+    else if (p.endsWith(".js") || p.endsWith(".mjs")) {
+      const r = spawnSync(process.execPath, ["--check", p], {
+        stdio: "inherit",
+      });
+      if (r.status) process.exit(r.status);
+    }
+  }
 }
-
-const files = ['server.js', ...['public/js', 'database', 'lib', 'scripts', 'tests'].flatMap(javascriptFiles)];
-for (const file of files) {
-  const result = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
-  if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status || 1);
-}
-console.log(`Syntax checked: ${files.length} JavaScript files.`);
+check(".");
+console.log("JavaScript syntax OK");
