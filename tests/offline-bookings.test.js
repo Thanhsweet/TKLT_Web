@@ -147,6 +147,29 @@ test('lễ tân đặt offline, phân quyền, chống trùng, thu tiền và ho
       assert.ok(overview.data.recent.some((b) => b.id === bookingId && b.full_name === booking.full_name));
       assert.equal(Number(overview.data.metrics.collected), 300000);
     });
+    await t.test('khách tại quầy thêm, thu tiền, bàn giao và trả dịch vụ; kiểm tra quyền và tồn kho', async () => {
+      const service = await insert("INSERT INTO services(venue_id,name,type,unit,price,stock_quantity,active) VALUES (?,?,'rental','cai',25000,2,TRUE)", [venues[0], `Test rental ${tag}`]);
+      const orderBody = { booking_id: bookingId, items: [{ service_id: service, quantity: 1 }] };
+      assert.equal((await request('/api/orders', 'customer', orderBody)).status, 403);
+      const created = await request('/api/orders', 'receptionist', orderBody);
+      assert.equal(created.status, 201, JSON.stringify(created.data));
+      const orderId = created.data.id;
+      const [[stored]] = await pool.execute('SELECT user_id,amount FROM service_orders WHERE id=?', [orderId]);
+      assert.equal(stored.user_id, null);
+      assert.equal(stored.amount, 25000);
+      const listed = await request('/api/orders');
+      assert.ok(listed.data.orders.some((o) => o.id === orderId && o.full_name === 'Khách offline kiểm thử'));
+      const shortage = await request('/api/orders', 'receptionist', { ...orderBody, items: [{ service_id: service, quantity: 2 }] });
+      assert.equal(shortage.status, 409);
+      for (const action of ['pay', 'deliver', 'return']) {
+        const result = await request(`/api/orders/${orderId}`, 'receptionist', { action, payment_ref: 'test-receipt' }, 'PATCH');
+        assert.equal(result.status, 200, JSON.stringify(result.data));
+      }
+      const [[stock]] = await pool.execute('SELECT stock_quantity FROM services WHERE id=?', [service]);
+      assert.equal(stock.stock_quantity, 2);
+      const invoice = await request(`/api/bookings/${bookingId}/invoice`);
+      assert.ok(invoice.data.orders.some((o) => o.id === orderId && o.status === 'completed'));
+    });
     await t.test('khách không có tài khoản vẫn check-in và hoàn tất; không cộng điểm vào lễ tân', async () => {
       await pool.execute('UPDATE bookings SET start_at=DATE_SUB(NOW(),INTERVAL 1 HOUR),end_at=NOW() WHERE id=?', [bookingId]);
       for (const status of ['checked_in', 'completed']) {
@@ -177,6 +200,8 @@ test('lễ tân đặt offline, phân quyền, chống trùng, thu tiền và ho
       const [bookings] = await pool.execute(`SELECT id FROM bookings WHERE court_id IN (${marks})`, courts);
       if (bookings.length) {
         const ids = bookings.map((b) => b.id), bookingMarks = ids.map(() => '?').join(',');
+        await pool.execute(`DELETE oi FROM service_order_items oi JOIN service_orders o ON o.id=oi.order_id WHERE o.booking_id IN (${bookingMarks})`, ids);
+        await pool.execute(`DELETE FROM service_orders WHERE booking_id IN (${bookingMarks})`, ids);
         for (const table of ['cleaning_tasks', 'loyalty_transactions', 'payments', 'promotion_uses']) {
           await pool.execute(`DELETE FROM ${table} WHERE booking_id IN (${bookingMarks})`, ids);
         }
