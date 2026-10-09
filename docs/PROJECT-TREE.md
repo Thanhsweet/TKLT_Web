@@ -1,0 +1,75 @@
+# Cấu trúc thư mục N01SPORT 3.1
+
+Giải nén vào TKLT để có đúng thư mục `_Web`. Tất cả mã nguồn và cấu hình cần thiết được liệt kê dưới đây; thư viện Node sẽ được cài bằng npm ci.
+
+```text
+_Web/
+  .dockerignore
+  .env.example
+  .env.production.example
+  .github/workflows/test.yml
+  .gitignore
+  .prettierignore
+  Dockerfile
+  README.md
+  compose.production.yml
+  database/ERD.md
+  database/full-schema.sql
+  database/migrate.js
+  database/migrations/003-release.sql
+  database/migrations/004-operations.sql
+  database/mysql.js
+  database/schema.sql
+  database/seed.sql
+  database/setup.js
+  deploy/Caddyfile
+  docker-compose.yml
+  docs/CHANGELOG.md
+  docs/DEPLOYMENT.md
+  docs/PAYMENTS.md
+  docs/QUICKSTART-WINDOWS.md
+  docs/TEST-REPORT.md
+  docs/function-coverage.md
+  docs/workflows.md
+  lib/bookings.js
+  lib/features.js
+  lib/http-security.js
+  lib/operations.js
+  lib/payments.js
+  lib/preflight.js
+  lib/reporting.js
+  lib/resources.js
+  lib/security.js
+  lib/validation.js
+  package-lock.json
+  package.json
+  public/account.html
+  public/court.html
+  public/css/portal.css
+  public/css/styles.css
+  public/favicon.svg
+  public/index.html
+  public/js/app.js
+  public/js/court.js
+  public/js/policies.js
+  public/js/portal.js
+  public/policies.html
+  scripts/check.js
+  scripts/create-admin.js
+  scripts/export-schema.js
+  scripts/restore.js
+  scripts/worker.js
+  server.js
+  tests/http.test.js
+  tests/integration.mysql.js
+  tests/operations.mysql.js
+  tests/payments.test.js
+  tests/project.test.js
+  tests/reporting.test.js
+  tests/schema.mysql.js
+  tests/ui-live.mjs
+  tests/ui-smoke.mjs
+  tests/validation.test.js
+```
+
+Bắt đầu với README.md và docs/QUICKSTART-WINDOWS.md. Triển khai trên mạng theo docs/DEPLOYMENT.md.
