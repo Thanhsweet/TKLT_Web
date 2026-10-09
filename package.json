@@ -1,22 +1,38 @@
 {
   "name": "n01sport-booking-mysql",
-  "version": "2.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "description": "N01SPORT - Website quản lý và đặt sân thể thao dùng Node.js, MySQL, HTML, CSS và JavaScript",
   "scripts": {
     "db:init": "node database/setup.js",
-    "db:reset": "node database/setup.js --reset",
+    "db:reset": "node database/setup.js --reset --demo",
+    "db:demo": "node database/setup.js --demo",
+    "db:migrate": "node database/migrate.js",
+    "db:restore": "node scripts/restore.js",
+    "admin:create": "node scripts/create-admin.js",
+    "worker": "node scripts/worker.js",
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test tests/*.test.js",
-    "check": "node scripts/check.js"
+    "test:integration": "node --test tests/integration.mysql.js",
+    "test:ui": "node tests/ui-smoke.mjs",
+    "schema:export": "node scripts/export-schema.js",
+    "check": "node scripts/check.js",
+    "test:ui:live": "node tests/ui-live.mjs",
+    "test:schema": "node tests/schema.mysql.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
-    "mysql2": "^3.11.5"
+    "mysql2": "^3.11.5",
+    "nodemailer": "^10.0.16"
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@sparticuz/chromium": "^153.0.0",
+    "prettier": "^3.9.9"
   }
 }
