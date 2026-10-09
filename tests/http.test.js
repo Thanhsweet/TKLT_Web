@@ -17,6 +17,8 @@ test("HTTP static, security headers, authorization and malformed request handlin
     for (const [, path] of assets) {
       const asset = await fetch(new URL(path, base));
       assert.equal(asset.status, 200, `Homepage asset failed: ${path}`);
+      if ([".js", ".css"].some((ext) => new URL(path, base).pathname.endsWith(ext)))
+        assert.equal(asset.headers.get("cache-control"), "no-cache");
       if (path.endsWith(".css"))
         assert.match(asset.headers.get("content-type"), /^text\/css\b/);
     }
