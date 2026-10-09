@@ -48,7 +48,7 @@ export async function openBooking(courtId) {
   $('#booking-eyebrow').textContent = offline ? 'LỄ TÂN ĐẶT SÂN CHO KHÁCH' : 'ĐẶT SÂN TRỰC TUYẾN';
   $('#booking-summary-note').textContent = offline ? 'Đơn được xác nhận ngay. Chỉ chọn đã nhận tiền khi đã thu đủ tiền của khách.' : 'Bạn có thể thanh toán mô phỏng sau khi tạo đơn.';
   $('#confirm-booking').textContent = offline ? 'Xác nhận đặt cho khách' : 'Xác nhận đặt sân';
-  $('#booking-date').value = offline ? ($('#staff-work-date').value < $('#booking-date').min ? $('#booking-date').min : $('#staff-work-date').value) : $('#date-input').value;
+  $('#booking-date').value = offline ? ($('#staff-work-date').value && $('#staff-work-date').value >= $('#booking-date').min ? $('#staff-work-date').value : $('#booking-date').min) : $('#date-input').value;
   $('#promotion-code').value = ''; $('#booking-note').value = ''; $('#guest-name').value = ''; $('#guest-phone').value = ''; $('#offline-payment').value = 'unpaid';
   showDialog('booking-dialog'); await loadSlots();
 }
