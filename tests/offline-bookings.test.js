@@ -38,6 +38,9 @@ test('nâng cấp schema hiện có bằng một ALTER và không thay đổi sc
 // Opt in to HTTP + MySQL integration checks. Fixtures are isolated and removed afterwards.
 test('lễ tân đặt offline, phân quyền, chống trùng, thu tiền và hoàn tất trên MySQL', { skip: process.env.N01_TEST_MYSQL !== '1' }, async (t) => {
   process.env.NODE_ENV = 'test';
+  const paymentMode = process.env.PAYMENT_MODE;
+  process.env.PAYMENT_MODE = 'demo';
+  t.after(() => { if (paymentMode === undefined) delete process.env.PAYMENT_MODE; else process.env.PAYMENT_MODE = paymentMode; });
   const { default: pool } = await import('../database/mysql.js');
   const { server } = await import('../server.js');
   const { hashPassword, tokenHash } = await import('../lib/security.js');
@@ -50,7 +53,8 @@ test('lễ tân đặt offline, phân quyền, chống trùng, thu tiền và ho
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const request = async (path, role = 'receptionist', body, method = body ? 'POST' : 'GET') => {
-    const response = await fetch(`${base}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(cookies[role] ? { Cookie: cookies[role] } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    const { csrfFor } = await import('../lib/http-security.js');
+    const response = await fetch(`${base}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(cookies[role] ? { Cookie: cookies[role], 'X-CSRF-Token': csrfFor(cookies[role].split('=')[1]) } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
     return { status: response.status, data: await response.json() };
   };
   try {
@@ -133,12 +137,18 @@ test('lễ tân đặt offline, phân quyền, chống trùng, thu tiền và ho
       assert.equal(booking.full_name, 'Khách offline kiểm thử');
       assert.equal(booking.phone, '0901234567');
       assert.equal(booking.payment_status, 'paid');
+      const lookup = await request(`/api/manage/bookings?date=${day}&q=${encodeURIComponent('Khách offline')}`);
+      assert.ok(lookup.data.bookings.some((b) => b.id === bookingId && b.full_name === booking.full_name));
+      const invoice = await request(`/api/bookings/${bookingId}/invoice`);
+      assert.equal(invoice.status, 200);
+      assert.equal(invoice.data.booking.full_name, booking.full_name);
       const overview = await request('/api/owner/dashboard', 'owner');
       assert.equal(overview.status, 200);
       assert.ok(overview.data.recent.some((b) => b.id === bookingId && b.full_name === booking.full_name));
       assert.equal(Number(overview.data.metrics.collected), 300000);
     });
     await t.test('khách không có tài khoản vẫn check-in và hoàn tất; không cộng điểm vào lễ tân', async () => {
+      await pool.execute('UPDATE bookings SET start_at=DATE_SUB(NOW(),INTERVAL 1 HOUR),end_at=NOW() WHERE id=?', [bookingId]);
       for (const status of ['checked_in', 'completed']) {
         const response = await request(`/api/staff/bookings/${bookingId}/status`, 'receptionist', { status }, 'PATCH');
         assert.equal(response.status, 200, JSON.stringify(response.data));
