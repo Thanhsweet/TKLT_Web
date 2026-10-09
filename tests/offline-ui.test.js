@@ -94,7 +94,8 @@ test('entry point nạp module, khởi tạo phiên và gắn nút đặt sân l
     if (path.includes('/slots?')) return { slots: [] };
     return { courts: [] };
   });
-  await import('../public/js/app.js');
+  const { ready } = await import('../public/js/app.js');
+  await ready;
   assert.equal(app.state.user.role, 'receptionist');
   assert.equal(app.element('#profile-name').textContent, 'Lễ Tân');
   await app.element('#staff-booking-create').dispatch('click');
