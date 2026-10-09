@@ -25,15 +25,19 @@ export function frontend(t, respond = () => ({})) {
     return elements.get(selector);
   };
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const locationDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'location');
+  globalThis.location = { search: '', hash: '', href: '' };
   globalThis.document = { querySelector: element, querySelectorAll: () => [] };
   t.after(() => {
     if (descriptor) Object.defineProperty(globalThis, 'document', descriptor);
     else delete globalThis.document;
+    if (locationDescriptor) Object.defineProperty(globalThis, 'location', locationDescriptor);
+    else delete globalThis.location;
     Object.assign(state, structuredClone(initialState));
   });
   t.mock.method(globalThis, 'fetch', async (path, options) => {
     calls.push({ path, options });
-    const data = await respond(path, options);
+    const data = path === '/api/csrf' ? { token: 'test-csrf' } : await respond(path, options);
     return { ok: true, status: 200, json: async () => data };
   });
   t.mock.method(globalThis, 'setTimeout', () => 0);
