@@ -7,14 +7,14 @@ services:
       MYSQL_DATABASE: n01sport
       MYSQL_USER: n01sport_user
       MYSQL_PASSWORD: N01Sport@123
-      MYSQL_ROOT_PASSWORD: Root@123456
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       TZ: Asia/Ho_Chi_Minh
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
       - n01sport_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pRoot@123456"]
+      test: ["CMD-SHELL", 'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
       interval: 5s
       timeout: 5s
       retries: 20
