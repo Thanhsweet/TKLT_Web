@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+.env.production
+var
+public/uploads
+test-results
+*.zip
+*.log
