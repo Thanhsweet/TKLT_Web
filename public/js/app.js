@@ -1,19 +1,9 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-const state = {
-  sports: [],
-  districts: [],
-  courts: [],
-  user: null,
-  selectedCourt: null,
-  selectedSlot: null,
-  activeBooking: null,
-  filters: { sport: "", district: "", q: "" },
-  managementData: null,
-  managementTab: "overview",
-  entityConfig: null,
-};
+import { state } from "./core/state.js";
+import { openBooking, createBooking, loadSlots, selectBookingCourt } from "./bookings.js";
+import { bindCourtEvents } from "./courts.js";
 
 const demoAccounts = {
   customer: ["khach@n01sport.vn", "Khach@123"],
@@ -116,6 +106,7 @@ function isManagement() {
 
 function updateSessionUi() {
   const loggedIn = Boolean(state.user);
+  $("#staff-booking-create").classList.toggle("hidden", state.user?.role !== "receptionist");
   $("#login-button").classList.toggle("hidden", loggedIn);
   $("#profile-button").classList.toggle("hidden", !loggedIn);
   $("#dashboard-link").classList.toggle("hidden", !loggedIn || !isCustomer());
@@ -195,16 +186,6 @@ function renderCourts() {
   $("#court-grid").innerHTML = state.courts.map(courtCard).join("");
   $("#court-grid").classList.toggle("hidden", !state.courts.length);
   $("#empty-state").classList.toggle("hidden", Boolean(state.courts.length));
-  $$("[data-book-court]").forEach((button) =>
-    button.addEventListener("click", () =>
-      openBooking(Number(button.dataset.bookCourt)),
-    ),
-  );
-  $$("[data-favorite]").forEach((button) =>
-    button.addEventListener("click", () =>
-      toggleFavorite(Number(button.dataset.favorite)),
-    ),
-  );
   const active = [
     state.filters.sport &&
       state.sports.find((item) => item.slug === state.filters.sport)?.name,
@@ -259,106 +240,6 @@ async function toggleFavorite(venueId) {
     );
   } catch (error) {
     toast(error.message);
-  }
-}
-
-function renderSlots(slots) {
-  $("#slot-grid").innerHTML = slots
-    .map(
-      (slot, index) =>
-        `<button class="slot-button" type="button" data-slot="${index}" ${slot.available ? "" : "disabled"}><span>${slot.label}</span><small>${slot.available ? money(slot.price) : "Đã đặt"}</small></button>`,
-    )
-    .join("");
-  $$(".slot-button:not(:disabled)").forEach((button) =>
-    button.addEventListener("click", () => {
-      state.selectedSlot = slots[Number(button.dataset.slot)];
-      $$(".slot-button").forEach((item) =>
-        item.classList.toggle("active", item === button),
-      );
-      $("#summary-time").textContent =
-        `${$("#booking-date").value.split("-").reverse().join("/")} · ${state.selectedSlot.label}`;
-      $("#summary-subtotal").textContent = money(state.selectedSlot.price);
-      $("#summary-total").textContent = money(state.selectedSlot.price);
-      $("#confirm-booking").disabled = false;
-    }),
-  );
-}
-
-async function loadSlots() {
-  state.selectedSlot = null;
-  $("#confirm-booking").disabled = true;
-  $("#summary-time").textContent = "Chưa chọn";
-  $("#summary-subtotal").textContent = "—";
-  $("#summary-total").textContent = "—";
-  $("#slot-grid").innerHTML = Array.from(
-    { length: 12 },
-    () => '<div class="slot-skeleton"></div>',
-  ).join("");
-  try {
-    renderSlots(
-      (
-        await api(
-          `/api/courts/${state.selectedCourt.id}/slots?date=${encodeURIComponent($("#booking-date").value)}`,
-        )
-      ).slots,
-    );
-  } catch (error) {
-    $("#slot-grid").innerHTML = `<p>${escapeHtml(error.message)}</p>`;
-  }
-}
-
-function openBooking(courtId) {
-  state.selectedCourt = state.courts.find((court) => court.id === courtId);
-  if (!state.selectedCourt) return;
-  $("#booking-court-name").textContent = state.selectedCourt.name;
-  $("#booking-venue").textContent =
-    `${state.selectedCourt.venue_name} · ${state.selectedCourt.address}, ${state.selectedCourt.district}`;
-  $("#summary-court").textContent = state.selectedCourt.name;
-  $("#booking-date").value = $("#date-input").value;
-  $("#promotion-code").value = "";
-  $("#booking-note").value = "";
-  showDialog("booking-dialog");
-  loadSlots();
-}
-
-async function createBooking() {
-  if (!isCustomer()) {
-    closeDialog("booking-dialog");
-    showDialog("login-dialog");
-    return toast("Đăng nhập bằng tài khoản khách hàng để đặt sân.");
-  }
-  if (!state.selectedSlot) return;
-  const button = $("#confirm-booking");
-  const original = button.textContent;
-  button.disabled = true;
-  button.textContent = "Đang giữ chỗ…";
-  try {
-    const data = await api("/api/bookings", {
-      method: "POST",
-      body: JSON.stringify({
-        court_id: state.selectedCourt.id,
-        start_at: state.selectedSlot.start_at,
-        end_at: state.selectedSlot.end_at,
-        promotion_code: $("#promotion-code").value.trim(),
-        note: $("#booking-note").value.trim(),
-      }),
-    });
-    state.activeBooking = data.booking;
-    closeDialog("booking-dialog");
-    $("#success-code").textContent = data.booking.booking_code;
-    $("#success-detail").textContent =
-      `${data.booking.court_name} · ${dateTime(data.booking.start_at)} · ${money(data.booking.total_amount)}. Giữ chỗ trong 10 phút.`;
-    showDialog("success-dialog");
-    loadCourts();
-  } catch (error) {
-    toast(error.message);
-    if (error.status === 401) {
-      closeDialog("booking-dialog");
-      showDialog("login-dialog");
-    }
-  } finally {
-    button.textContent = original;
-    button.disabled = !state.selectedSlot;
   }
 }
 
@@ -1119,6 +1000,12 @@ async function logout() {
 }
 
 function bindEvents() {
+  bindCourtEvents(openBooking);
+  $("#staff-booking-create").addEventListener("click", () => openBooking());
+  $("#offline-court").addEventListener("change", async () => {
+    const court = state.offlineCourts.find((c) => c.id === Number($("#offline-court").value));
+    if (court) { selectBookingCourt(court); await loadSlots(); }
+  });
   $("#search-form").addEventListener("submit", (event) => {
     event.preventDefault();
     state.filters = {
@@ -1212,4 +1099,4 @@ async function init() {
   }
 }
 
-init();
+export const ready = init();
