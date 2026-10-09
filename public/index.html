@@ -50,6 +50,7 @@
         <button class="nav-link hidden" id="logout-link" type="button">Đăng xuất</button>
       </nav>
       <div class="header-actions">
+        <button class="button button-primary hidden" id="staff-booking-create" type="button">Đặt sân tại quầy</button>
         <a class="button button-ghost" href="/account.html">Tài khoản</a>
         <button class="button button-ghost" id="login-button" type="button">
           <svg><use href="#i-user"/></svg><span>Đăng nhập</span>
@@ -158,6 +159,7 @@
     <section class="section management-section hidden" id="management-section">
       <div class="container">
         <div class="section-heading"><div><p class="eyebrow" id="management-eyebrow">VẬN HÀNH</p><h2 id="management-title">Bảng điều khiển</h2></div><div class="heading-actions"><button class="button button-primary hidden" id="management-create" type="button"><svg><use href="#i-plus"/></svg><span>Thêm mới</span></button><button class="button button-outline" id="refresh-management" type="button">Làm mới dữ liệu</button></div></div>
+        <label>Ngày làm việc<input id="staff-work-date" type="date"></label>
         <div class="management-tabs" id="management-tabs" role="tablist" aria-label="Nhóm chức năng quản lý"></div>
         <div class="metrics-grid" id="metrics-grid"></div>
         <div class="management-grid"><div class="panel"><div class="panel-heading"><h3 id="table-title">Đơn gần đây</h3><span>Cập nhật theo dữ liệu thực</span></div><div class="table-wrap" id="management-table"></div></div><aside class="panel" id="side-panel"></aside></div>
@@ -222,10 +224,15 @@
   <dialog class="dialog booking-dialog" id="booking-dialog">
     <div class="dialog-card booking-card">
       <button class="icon-button dialog-close" type="button" data-close="booking-dialog" aria-label="Đóng"><svg><use href="#i-close"/></svg></button>
-      <div class="booking-head"><p class="eyebrow">ĐẶT SÂN TRỰC TUYẾN</p><h2 id="booking-court-name">Chọn khung giờ</h2><p id="booking-venue"></p></div>
+      <div class="booking-head"><p class="eyebrow" id="booking-eyebrow">ĐẶT SÂN TRỰC TUYẾN</p><h2 id="booking-court-name">Chọn khung giờ</h2><p id="booking-venue"></p></div>
       <div class="booking-layout">
-        <div><label class="date-control"><span>Ngày chơi</span><input id="booking-date" type="date"></label><h3 class="slot-heading">Khung giờ còn trống</h3><div class="slot-grid" id="slot-grid"></div></div>
-        <aside class="order-summary"><h3>Tóm tắt</h3><dl><div><dt>Sân</dt><dd id="summary-court">—</dd></div><div><dt>Thời gian</dt><dd id="summary-time">Chưa chọn</dd></div><div><dt>Giá sân</dt><dd id="summary-subtotal">—</dd></div></dl><label><span>Mã ưu đãi</span><input id="promotion-code" type="text" placeholder="VD: CHAOSAN"></label><label><span>Ghi chú</span><textarea id="booking-note" rows="3" placeholder="Yêu cầu thêm cho chủ sân"></textarea></label><div class="summary-total"><span>Tạm tính</span><strong id="summary-total">—</strong></div><button class="button button-primary button-full" id="confirm-booking" type="button" disabled>Xác nhận đặt sân</button><small class="summary-note">Bạn có thể thanh toán mô phỏng sau khi tạo đơn.</small></aside>
+        <div><div id="offline-booking-fields" class="hidden">
+          <label><span>Sân tại cơ sở</span><select id="offline-court"></select></label>
+          <label><span>Tên khách</span><input id="guest-name" required minlength="2" maxlength="150" autocomplete="name"></label>
+          <label><span>Số điện thoại</span><input id="guest-phone" type="tel" required pattern="[+0-9 ().-]{9,25}" autocomplete="tel"></label>
+          <label><span>Thu tiền</span><select id="offline-payment"><option value="unpaid">Chưa thu tiền</option><option value="cash">Đã nhận tiền mặt</option><option value="bank_transfer">Đã nhận chuyển khoản</option></select></label>
+        </div><label class="date-control"><span>Ngày chơi</span><input id="booking-date" type="date"></label><h3 class="slot-heading">Khung giờ còn trống</h3><div class="slot-grid" id="slot-grid"></div></div>
+        <aside class="order-summary"><h3>Tóm tắt</h3><dl><div><dt>Sân</dt><dd id="summary-court">—</dd></div><div><dt>Thời gian</dt><dd id="summary-time">Chưa chọn</dd></div><div><dt>Giá sân</dt><dd id="summary-subtotal">—</dd></div></dl><label id="promotion-field"><span>Mã ưu đãi</span><input id="promotion-code" type="text" placeholder="VD: CHAOSAN"></label><label><span>Ghi chú</span><textarea id="booking-note" rows="3" placeholder="Yêu cầu thêm cho chủ sân"></textarea></label><div class="summary-total"><span>Tạm tính</span><strong id="summary-total">—</strong></div><button class="button button-primary button-full" id="confirm-booking" type="button" disabled>Xác nhận đặt sân</button><small class="summary-note" id="booking-summary-note">Bạn có thể thanh toán mô phỏng sau khi tạo đơn.</small></aside>
       </div>
     </div>
   </dialog>
@@ -237,6 +244,6 @@
   </dialog>
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/app.js?v=walk-in-2"></script>
 </body>
 </html>
