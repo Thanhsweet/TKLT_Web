@@ -23,12 +23,14 @@ function courtCard(court) {
       <span class="art-badge">${court.indoor ? 'Trong nhà' : 'Ngoài trời'}</span>
       <button class="favorite-button ${court.is_favorite ? 'active' : ''}" type="button" data-favorite="${court.venue_id}" aria-label="${court.is_favorite ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}" aria-pressed="${court.is_favorite}"><svg><use href="#i-heart"/></svg></button>
       <span class="sport-monogram">${sportCode(court.sport_slug)}</span>
+      ${court.image_url ? `<img class="court-photo" src="${escapeHtml(court.image_url)}" alt="${escapeHtml(court.venue_name)}" loading="lazy" width="400" height="220">` : ''}
     </div>
     <div class="court-body">
       <div class="court-title-row"><div><h3>${escapeHtml(court.name)}</h3><div class="venue-name">${escapeHtml(court.venue_name)} · ${escapeHtml(court.sport_name)}</div></div><span class="rating"><svg><use href="#i-star"/></svg>${court.rating}</span></div>
       <div class="court-location"><svg><use href="#i-pin"/></svg><span>${escapeHtml(court.address)}, ${escapeHtml(court.district)}</span></div>
       <div class="amenity-list">${amenities}</div>
-      <div class="court-footer"><div class="price">Từ <strong>${money(court.base_price)} / giờ</strong></div><button class="button button-primary" type="button" data-book-court="${court.id}">Xem lịch <svg><use href="#i-arrow"/></svg></button></div>
+      <p><a href="/court.html?id=${court.id}">Chi tiết sân</a>${court.distance_km !== undefined && court.distance_km !== null ? ' · ' + court.distance_km + ' km' : ''}</p>
+      <div class="court-footer"><div class="price">Từ <strong>${money(court.base_price)} / ${court.slot_minutes || 60} phút</strong></div><button class="button button-primary" type="button" data-book-court="${court.id}">Xem lịch <svg><use href="#i-arrow"/></svg></button></div>
     </div>
   </article>`;
 }
