@@ -518,3 +518,8 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
  email_hash CHAR(64) PRIMARY KEY, failures INT UNSIGNED NOT NULL DEFAULT 0,
  window_start DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Source: database/migrations/005-walk-in-services.sql
+-- Walk-in guests are identified by the linked booking, without a user account.
+ALTER TABLE service_orders MODIFY COLUMN user_id BIGINT UNSIGNED NULL;
