@@ -1,3 +1,4 @@
+import { ensureOfflineBookingSchema } from "./migrations.js";
 import mysql from "mysql2/promise";
 import "dotenv/config";
 import { readFileSync, readdirSync } from "node:fs";
@@ -15,6 +16,7 @@ const c = await mysql.createConnection({
 });
 try {
   await c.query(readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
+  await ensureOfflineBookingSchema(c);
   await c.query(
     "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(100) PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
   );
