@@ -48,12 +48,13 @@ export async function openBooking(courtId) {
   $('#booking-eyebrow').textContent = offline ? 'LỄ TÂN ĐẶT SÂN CHO KHÁCH' : 'ĐẶT SÂN TRỰC TUYẾN';
   $('#booking-summary-note').textContent = offline ? 'Đơn được xác nhận ngay. Chỉ chọn đã nhận tiền khi đã thu đủ tiền của khách.' : 'Bạn có thể thanh toán mô phỏng sau khi tạo đơn.';
   $('#confirm-booking').textContent = offline ? 'Xác nhận đặt cho khách' : 'Xác nhận đặt sân';
-  $('#booking-date').value = offline ? ($('#staff-work-date').value && $('#staff-work-date').value >= $('#booking-date').min ? $('#staff-work-date').value : $('#booking-date').min) : $('#date-input').value;
+  const staffDate = $('#staff-work-date')?.value || $('#date-input').value;
+  $('#booking-date').value = offline ? (staffDate >= $('#booking-date').min ? staffDate : $('#booking-date').min) : $('#date-input').value;
   $('#promotion-code').value = ''; $('#booking-note').value = ''; $('#guest-name').value = ''; $('#guest-phone').value = ''; $('#offline-payment').value = 'unpaid';
   showDialog('booking-dialog'); await loadSlots();
 }
 
-export async function createBooking() {
+export async function createBooking({ onCreated } = {}) {
   const offline = state.user?.role === 'receptionist';
   if (!isCustomer() && !offline) { closeDialog('booking-dialog'); showDialog('login-dialog'); return toast('Đăng nhập bằng tài khoản khách hàng hoặc lễ tân để đặt sân.'); }
   if (!state.selectedSlot) return;
@@ -66,8 +67,12 @@ export async function createBooking() {
     state.activeBooking = data.booking; closeDialog('booking-dialog'); $('#success-code').textContent = data.booking.booking_code;
     $('#success-detail').textContent = `${data.booking.court_name} · ${dateTime(data.booking.start_at)} · ${money(data.booking.total_amount)}. ${offline ? `${data.booking.guest_name} · ${data.booking.guest_phone}. Đã xác nhận · ${statusText(data.booking.payment_status)}.` : 'Giữ chỗ trong 10 phút.'}`;
     $('#pay-now').classList.toggle('hidden', offline);
-    showDialog('success-dialog'); loadCourts();
-    if (offline) { $('#staff-work-date').value = $('#booking-date').value; await showManagement(); }
+    showDialog('success-dialog');
+    if (onCreated) await onCreated();
+    else {
+      await loadCourts();
+      if (offline) { if ($('#staff-work-date')) $('#staff-work-date').value = $('#booking-date').value; await showManagement(); }
+    }
   } catch (error) { toast(error.message); if (error.status === 401) { closeDialog('booking-dialog'); showDialog('login-dialog'); } }
   finally { button.textContent = original; button.disabled = !state.selectedSlot; }
 }
