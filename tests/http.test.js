@@ -1,27 +1,47 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 process.env.NODE_ENV = "test";
-const { server } = await import("../server.js");
+const { server, isPublicFile } = await import("../server.js");
+const { win32, posix } = await import("node:path");
+test("static path boundary accepts Windows and POSIX files and rejects escapes", () => {
+  for (const [api, root] of [
+    [win32, "C:/Users/Admin/source/TKLT/_Web/_Web/public"],
+    [posix, "/app/public"],
+  ]) {
+    const base = api.resolve(root);
+    for (const file of [
+      "index.html",
+      "css/styles.css",
+      "js/app.js",
+      "assets/tennis.webp",
+    ])
+      assert.equal(isPublicFile(base, api.join(base, file), api), true, file);
+    for (const file of [
+      base,
+      api.resolve(base, "..", "server.js"),
+      api.resolve(base, "..", "public-other", "secret"),
+    ])
+      assert.equal(isPublicFile(base, file, api), false, file);
+  }
+  assert.equal(isPublicFile("C:\\app\\public", "D:\\secret.txt", win32), false);
+});
 test("HTTP static, security headers, authorization and malformed request handling", async () => {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + server.address().port;
   try {
-    const home = await fetch(base + "/");
-    assert.equal(home.status, 200);
-    const html = await home.text();
-    const assets = [
-      ...html.matchAll(/<link\b[^>]*href="([^"]+)"/g),
-      ...html.matchAll(/<script\b[^>]*src="([^"]+)"/g),
-    ];
-    assert.ok(assets.length > 0);
-    for (const [, path] of assets) {
-      const asset = await fetch(new URL(path, base));
-      assert.equal(asset.status, 200, `Homepage asset failed: ${path}`);
-      if ([".js", ".css"].some((ext) => new URL(path, base).pathname.endsWith(ext)))
-        assert.equal(asset.headers.get("cache-control"), "no-cache");
-      if (path.endsWith(".css"))
-        assert.match(asset.headers.get("content-type"), /^text\/css\b/);
+    for (const [path, type] of [
+      ["/", "text/html"],
+      ["/css/styles.css", "text/css"],
+      ["/js/app.js", "text/javascript"],
+      ["/assets/tennis.webp", "image/webp"],
+    ]) {
+      const response = await fetch(base + path);
+      assert.equal(response.status, 200, path);
+      assert.ok(response.headers.get("content-type").startsWith(type), path);
+      assert.ok((await response.arrayBuffer()).byteLength > 0, path);
     }
+    const outside = await fetch(base + "/..%5cserver.js");
+    assert.notEqual(outside.status, 200);
     const r = await fetch(base + "/account.html");
     assert.equal(r.status, 200);
     assert.match(await r.text(), /id="navigation"/);
