@@ -1,8 +1,20 @@
-# N01SPORT 3.1 — HTML/CSS/JavaScript + Node.js + MySQL
+# N01SPORT 3.2 — HTML/CSS/JavaScript + Node.js + MySQL
 
 Mã nguồn website đặt và quản lý sân thể thao. Bản 3 bổ sung các luồng vận hành, trang tài khoản theo 7 vai trò, migration nâng cấp từ v2 và cấu hình triển khai HTTPS trên VPS.
 
-**Đây là gói mã nguồn để triển khai, chưa phải website đã được xuất bản.** Đã chạy kiểm thử logic/HTTP, MySQL 8.4.11, sao lưu/phục hồi thật và 59 màn hình trình duyệt. Tài khoản ngân hàng, SMTP, VPS/tên miền của anh cần cấu hình và nghiệm thu trước khi nhận khách. Xem `docs/TEST-REPORT.md`.
+**Đây là gói mã nguồn để triển khai, chưa phải website đã được xuất bản.** Đã chạy kiểm thử logic/HTTP, MySQL 8.4.11, sao lưu/phục hồi thật và 66 màn hình trình duyệt theo vai trò cùng luồng đặt sân thực tế. Tài khoản ngân hàng, SMTP, VPS/tên miền của anh cần cấu hình và nghiệm thu trước khi nhận khách. Xem `docs/TEST-REPORT.md`.
+
+## Giao diện 3.2
+
+Nâng cấp từ đúng gói N01SPORT v3.1 của cuộc trò chuyện theo UI/UX Pro Max. Trang chủ, chi tiết sân, tài khoản và vận hành dùng chung bộ màu xanh rừng / xanh chanh / trắng ngà; 5 bộ ảnh minh họa WebP được đóng gói sẵn.
+
+- Tìm sân: lọc trong/ngoài nhà, ngân sách mỗi lượt, sắp xếp giá/đánh giá, xóa bộ lọc.
+- Chi tiết sân: hình ảnh, tiện ích, mặt sân, giờ hoạt động, đánh giá cơ sở và liên kết đặt lịch đúng sân.
+- Tổng quan riêng theo vai trò, số liệu lấy từ API/MySQL, lối tắt công việc và menu chia nhóm.
+- Bố cục điện thoại: menu mở/đóng, bảng chuyển thành thẻ; biểu mẫu và chọn giờ dễ thao tác.
+- Chọn giờ khi chưa đăng nhập: đăng nhập xong quay lại đúng sân/ngày, cập nhật lịch trống để tiếp tục.
+
+Hướng dẫn thiết kế và thay ảnh: `docs/DESIGN-SYSTEM.md`. Bản 3.2 không thêm bảng hoặc migration. Nếu đã chạy bản 3.1, giữ nguyên `.env`, database, thư mục ảnh tải lên và thư mục sao lưu; thay mã nguồn rồi chạy lại app/worker. **Không chạy db:demo hay db:reset khi nâng cấp.**
 
 ## Bắt đầu ở đâu?
 
