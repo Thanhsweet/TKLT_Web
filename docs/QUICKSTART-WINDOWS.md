@@ -1,5 +1,9 @@
 # Chạy N01SPORT trên Windows bằng MySQL, không cần Docker
 
+## Đang chạy bản 3.1 và chỉ muốn cập nhật giao diện?
+
+Giữ `.env`, database, `public/uploads` (nếu có) và thư mục sao lưu. Sao lưu trước, dừng app/worker, chép mã nguồn 3.2 vào `_Web`, chạy `npm ci --omit=dev`, rồi mở hai terminal chạy `npm start` và `npm run worker`. Truy cập http://localhost:3000, nhấn Ctrl+F5 nếu trình duyệt còn giữ CSS cũ. Bản 3.2 không thêm bảng; không chạy db:demo/db:reset để nâng cấp.
+
 ## 1. Chuẩn bị
 
 Cài Node.js 22 trở lên, MySQL Server 8.4 và Workbench. Workbench là giao diện quản lý, MySQL Server mới là dịch vụ lưu database. Trong services.msc, dịch vụ MySQL phải Running.
