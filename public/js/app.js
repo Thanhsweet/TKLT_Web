@@ -1,9 +1,21 @@
+import { sportImage, sportIcon } from "./ui.js";
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-import { state } from "./core/state.js";
-import { openBooking, createBooking, loadSlots, selectBookingCourt } from "./bookings.js";
-import { bindCourtEvents } from "./courts.js";
+const state = {
+  sports: [],
+  districts: [],
+  courts: [],
+  user: null,
+  resumeBooking: false,
+  selectedCourt: null,
+  selectedSlot: null,
+  activeBooking: null,
+  filters: { sport: "", district: "", q: "" },
+  managementData: null,
+  managementTab: "overview",
+  entityConfig: null,
+};
 
 const demoAccounts = {
   customer: ["khach@n01sport.vn", "Khach@123"],
@@ -106,7 +118,6 @@ function isManagement() {
 
 function updateSessionUi() {
   const loggedIn = Boolean(state.user);
-  $("#staff-booking-create").classList.toggle("hidden", state.user?.role !== "receptionist");
   $("#login-button").classList.toggle("hidden", loggedIn);
   $("#profile-button").classList.toggle("hidden", !loggedIn);
   $("#dashboard-link").classList.toggle("hidden", !loggedIn || !isCustomer());
@@ -147,7 +158,7 @@ function renderBootstrap() {
       .join(""),
   );
   $("#sport-chips").innerHTML =
-    `<button class="sport-chip active" type="button" data-sport=""><span class="sport-symbol">ALL</span>Tất cả</button>${state.sports.map((s) => `<button class="sport-chip" type="button" data-sport="${escapeHtml(s.slug)}"><span class="sport-symbol">${sportCode(s.slug)}</span>${escapeHtml(s.name)}</button>`).join("")}`;
+    `<button class="sport-chip active" type="button" data-sport="" aria-pressed="true"><span class="sport-symbol">${sportIcon("")}</span>Tất cả</button>${state.sports.map((s) => `<button class="sport-chip" type="button" data-sport="${escapeHtml(s.slug)}" aria-pressed="false"><span class="sport-symbol">${sportIcon(s.slug)}</span>${escapeHtml(s.name)}</button>`).join("")}`;
   $$(".sport-chip").forEach((button) =>
     button.addEventListener("click", () => {
       $$(".sport-chip").forEach((item) =>
@@ -155,6 +166,9 @@ function renderBootstrap() {
       );
       $("#sport-select").value = button.dataset.sport;
       state.filters.sport = button.dataset.sport;
+      $$(".sport-chip").forEach((item) =>
+        item.setAttribute("aria-pressed", String(item === button)),
+      );
       loadCourts(true);
     }),
   );
@@ -170,35 +184,65 @@ function courtCard(court) {
       <span class="art-badge">${court.indoor ? "Trong nhà" : "Ngoài trời"}</span>
       <button class="favorite-button ${court.is_favorite ? "active" : ""}" type="button" data-favorite="${court.venue_id}" aria-label="${court.is_favorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}" aria-pressed="${court.is_favorite}"><svg><use href="#i-heart"/></svg></button>
       <span class="sport-monogram">${sportCode(court.sport_slug)}</span>
-      ${court.image_url ? `<img class="court-photo" src="${escapeHtml(court.image_url)}" alt="${escapeHtml(court.venue_name)}" loading="lazy" width="400" height="220">` : ""}
+      <img class="court-photo" src="${escapeHtml(court.image_url || sportImage(court.sport_slug, true))}" data-fallback="${sportImage(court.sport_slug, true)}" alt="${escapeHtml(court.image_url ? court.venue_name : "Hình minh họa " + court.sport_name)}" loading="lazy" decoding="async" width="640" height="427"><span class="photo-disclaimer" ${court.image_url ? "hidden" : ""}>Ảnh minh họa</span>
     </div>
     <div class="court-body">
-      <div class="court-title-row"><div><h3>${escapeHtml(court.name)}</h3><div class="venue-name">${escapeHtml(court.venue_name)} · ${escapeHtml(court.sport_name)}</div></div><span class="rating"><svg><use href="#i-star"/></svg>${court.rating}</span></div>
+      <div class="court-title-row"><div><h3><a href="/court.html?id=${court.id}">${escapeHtml(court.name)}</a></h3><div class="venue-name">${escapeHtml(court.venue_name)} · ${escapeHtml(court.sport_name)}</div></div><span class="rating"><svg><use href="#i-star"/></svg>${court.rating}</span></div>
       <div class="court-location"><svg><use href="#i-pin"/></svg><span>${escapeHtml(court.address)}, ${escapeHtml(court.district)}</span></div>
       <div class="amenity-list">${amenities}</div>
-      <p><a href="/court.html?id=${court.id}">Chi tiết sân</a>${court.distance_km !== undefined && court.distance_km !== null ? " · " + court.distance_km + " km" : ""}</p><div class="court-footer"><div class="price">Từ <strong>${money(court.base_price)} / ${court.slot_minutes} phút</strong></div><button class="button button-primary" type="button" data-book-court="${court.id}">Xem lịch <svg><use href="#i-arrow"/></svg></button></div>
+      <p class="card-detail-link"><a href="/court.html?id=${court.id}">Thông tin sân <span aria-hidden="true">↗</span></a>${court.distance_km !== undefined && court.distance_km !== null ? " · " + court.distance_km + " km" : ""}</p><div class="court-footer"><div class="price">Từ <strong>${money(court.base_price)} <small>/ ${court.slot_minutes} phút</small></strong></div><button class="button button-primary" type="button" data-book-court="${court.id}">Xem lịch <svg><use href="#i-arrow"/></svg></button></div>
     </div>
   </article>`;
 }
 
 function renderCourts() {
-  $("#result-count").textContent = state.courts.length;
-  $("#court-grid").innerHTML = state.courts.map(courtCard).join("");
-  $("#court-grid").classList.toggle("hidden", !state.courts.length);
-  $("#empty-state").classList.toggle("hidden", Boolean(state.courts.length));
+  const indoor = $("#indoor-filter").value,
+    budget = Number($("#budget-filter").value),
+    sort = $("#sort-select").value;
+  const courts = state.courts.filter(
+    (c) =>
+      (!indoor || Boolean(c.indoor) === (indoor === "indoor")) &&
+      (!budget || Number(c.base_price) <= budget),
+  );
+  if (sort === "price-asc") courts.sort((a, b) => a.base_price - b.base_price);
+  if (sort === "price-desc") courts.sort((a, b) => b.base_price - a.base_price);
+  if (sort === "rating") courts.sort((a, b) => b.rating - a.rating);
+  $("#result-count").textContent = courts.length;
+  $("#court-grid").innerHTML = courts.map(courtCard).join("");
+  $("#court-grid").classList.toggle("hidden", !courts.length);
+  $("#empty-state").classList.toggle("hidden", Boolean(courts.length));
+  $$("[data-book-court]").forEach((button) =>
+    button.addEventListener("click", () =>
+      openBooking(Number(button.dataset.bookCourt)),
+    ),
+  );
+  $$("[data-favorite]").forEach((button) =>
+    button.addEventListener("click", () =>
+      toggleFavorite(Number(button.dataset.favorite)),
+    ),
+  );
   const active = [
+    indoor && (indoor === "indoor" ? "Trong nhà" : "Ngoài trời"),
+    budget && `Đến ${money(budget)} / lượt`,
+    state.filters.lat && "Theo vị trí của bạn",
     state.filters.sport &&
       state.sports.find((item) => item.slug === state.filters.sport)?.name,
     state.filters.district,
     state.filters.q && `“${state.filters.q}”`,
   ].filter(Boolean);
+  $("#reset-filters").classList.toggle("hidden", !active.length);
   $("#filter-summary").classList.toggle("hidden", !active.length);
   $("#filter-summary").textContent = active.length
     ? `Đang lọc: ${active.join(" · ")}`
     : "";
 }
 
+let courtRequest = 0;
 async function loadCourts(scroll = false) {
+  const request = ++courtRequest;
+  $("#court-grid").setAttribute("aria-busy", "true");
+  $("#court-grid").classList.remove("hidden");
+  $("#empty-state").classList.add("hidden");
   $("#court-grid").innerHTML = Array.from(
     { length: 6 },
     () => '<div class="slot-skeleton court-skeleton"></div>',
@@ -207,13 +251,20 @@ async function loadCourts(scroll = false) {
     Object.entries(state.filters).filter(([, value]) => value),
   );
   try {
-    state.courts = (await api(`/api/courts?${params}`)).courts;
+    const data = await api(`/api/courts?${params}`);
+    if (request !== courtRequest) return;
+    state.courts = data.courts;
     renderCourts();
     if (scroll)
       $("#courts").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
-    $("#court-grid").innerHTML = "";
-    toast(error.message);
+    if (request !== courtRequest) return;
+    $("#court-grid").innerHTML =
+      `<div class="empty-state" role="alert"><h3>Chưa thể tải danh sách sân</h3><p>${escapeHtml(error.message)}</p><button type="button" class="button button-outline" id="retry-courts">Thử lại</button></div>`;
+    $("#retry-courts").onclick = () => loadCourts();
+  } finally {
+    if (request === courtRequest)
+      $("#court-grid").setAttribute("aria-busy", "false");
   }
 }
 
@@ -240,6 +291,122 @@ async function toggleFavorite(venueId) {
     );
   } catch (error) {
     toast(error.message);
+  }
+}
+
+function renderSlots(slots) {
+  if (!slots.length) {
+    $("#slot-grid").innerHTML =
+      '<p class="slots-empty">Chưa có khung giờ cho ngày này. Vui lòng chọn ngày khác.</p>';
+    return;
+  }
+  $("#slot-grid").innerHTML = slots
+    .map(
+      (slot, index) =>
+        `<button class="slot-button" type="button" aria-pressed="false" data-slot="${index}" ${slot.available ? "" : "disabled"}><span>${slot.label}</span><small>${slot.available ? money(slot.price) : "Đã đặt"}</small></button>`,
+    )
+    .join("");
+  $$(".slot-button:not(:disabled)").forEach((button) =>
+    button.addEventListener("click", () => {
+      state.selectedSlot = slots[Number(button.dataset.slot)];
+      $$(".slot-button").forEach((item) =>
+        item.classList.toggle("active", item === button),
+      );
+      $$(".slot-button").forEach((item) =>
+        item.setAttribute("aria-pressed", String(item === button)),
+      );
+      $("#summary-time").textContent =
+        `${$("#booking-date").value.split("-").reverse().join("/")} · ${state.selectedSlot.label}`;
+      $("#summary-subtotal").textContent = money(state.selectedSlot.price);
+      $("#summary-total").textContent = money(state.selectedSlot.price);
+      $("#confirm-booking").disabled = false;
+    }),
+  );
+}
+
+let slotRequest = 0;
+async function loadSlots() {
+  const request = ++slotRequest;
+  const courtId = state.selectedCourt.id;
+  const date = $("#booking-date").value;
+  $("#slot-grid").setAttribute("aria-busy", "true");
+  state.selectedSlot = null;
+  $("#confirm-booking").disabled = true;
+  $("#summary-time").textContent = "Chưa chọn";
+  $("#summary-subtotal").textContent = "—";
+  $("#summary-total").textContent = "—";
+  $("#slot-grid").innerHTML = Array.from(
+    { length: 12 },
+    () => '<div class="slot-skeleton"></div>',
+  ).join("");
+  try {
+    const data = await api(
+      `/api/courts/${courtId}/slots?date=${encodeURIComponent(date)}`,
+    );
+    if (request === slotRequest) renderSlots(data.slots);
+  } catch (error) {
+    if (request === slotRequest)
+      $("#slot-grid").innerHTML =
+        `<p role="alert">${escapeHtml(error.message)}</p>`;
+  } finally {
+    if (request === slotRequest)
+      $("#slot-grid").setAttribute("aria-busy", "false");
+  }
+}
+
+function openBooking(courtId) {
+  state.selectedCourt = state.courts.find((court) => court.id === courtId);
+  if (!state.selectedCourt) return;
+  $("#booking-court-name").textContent = state.selectedCourt.name;
+  $("#booking-venue").textContent =
+    `${state.selectedCourt.venue_name} · ${state.selectedCourt.address}, ${state.selectedCourt.district}`;
+  $("#summary-court").textContent = state.selectedCourt.name;
+  $("#booking-date").value = $("#date-input").value;
+  $("#promotion-code").value = "";
+  $("#booking-note").value = "";
+  showDialog("booking-dialog");
+  loadSlots();
+}
+
+async function createBooking() {
+  if (!isCustomer()) {
+    state.resumeBooking = true;
+    closeDialog("booking-dialog");
+    showDialog("login-dialog");
+    return toast("Đăng nhập bằng tài khoản khách hàng để đặt sân.");
+  }
+  if (!state.selectedSlot) return;
+  const button = $("#confirm-booking");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "Đang giữ chỗ…";
+  try {
+    const data = await api("/api/bookings", {
+      method: "POST",
+      body: JSON.stringify({
+        court_id: state.selectedCourt.id,
+        start_at: state.selectedSlot.start_at,
+        end_at: state.selectedSlot.end_at,
+        promotion_code: $("#promotion-code").value.trim(),
+        note: $("#booking-note").value.trim(),
+      }),
+    });
+    state.activeBooking = data.booking;
+    closeDialog("booking-dialog");
+    $("#success-code").textContent = data.booking.booking_code;
+    $("#success-detail").textContent =
+      `${data.booking.court_name} · ${dateTime(data.booking.start_at)} · ${money(data.booking.total_amount)}. Giữ chỗ trong 10 phút.`;
+    showDialog("success-dialog");
+    loadCourts();
+  } catch (error) {
+    toast(error.message);
+    if (error.status === 401) {
+      closeDialog("booking-dialog");
+      showDialog("login-dialog");
+    }
+  } finally {
+    button.textContent = original;
+    button.disabled = !state.selectedSlot;
   }
 }
 
@@ -950,7 +1117,13 @@ async function login(event) {
     closeDialog("login-dialog");
     toast(`Xin chào ${state.user.full_name}.`);
     await loadCourts();
-    if (isManagement()) showManagement();
+    if (isManagement()) location.href = "/account.html";
+    else if (state.resumeBooking && state.selectedCourt) {
+      state.resumeBooking = false;
+      showDialog("booking-dialog");
+      await loadSlots();
+      toast("Đã đăng nhập. Chọn lại khung giờ đã được cập nhật để tiếp tục.");
+    }
   } catch (err) {
     error.textContent = err.message;
     error.classList.remove("hidden");
@@ -1000,12 +1173,31 @@ async function logout() {
 }
 
 function bindEvents() {
-  bindCourtEvents(openBooking);
-  $("#staff-booking-create").addEventListener("click", () => openBooking());
-  $("#offline-court").addEventListener("change", async () => {
-    const court = state.offlineCourts.find((c) => c.id === Number($("#offline-court").value));
-    if (court) { selectBookingCourt(court); await loadSlots(); }
+  ["#sort-select", "#indoor-filter", "#budget-filter"].forEach((id) =>
+    $(id).addEventListener("change", renderCourts),
+  );
+  $("#reset-filters").addEventListener("click", () => {
+    state.filters = { sport: "", district: "", q: "" };
+    [
+      "#sport-select",
+      "#district-select",
+      "#query-input",
+      "#indoor-filter",
+      "#budget-filter",
+    ].forEach((id) => ($(id).value = ""));
+    $("#sort-select").value = "default";
+    $$(".sport-chip").forEach((item) => {
+      item.classList.toggle("active", !item.dataset.sport);
+      item.setAttribute("aria-pressed", String(!item.dataset.sport));
+    });
+    loadCourts();
   });
+  $$("#main-nav a").forEach((a) =>
+    a.addEventListener("click", () => {
+      $("#main-nav").classList.remove("open");
+      $("#menu-button").setAttribute("aria-expanded", "false");
+    }),
+  );
   $("#search-form").addEventListener("submit", (event) => {
     event.preventDefault();
     state.filters = {
@@ -1017,6 +1209,12 @@ function bindEvents() {
       item.classList.toggle(
         "active",
         item.dataset.sport === state.filters.sport,
+      ),
+    );
+    $$(".sport-chip").forEach((item) =>
+      item.setAttribute(
+        "aria-pressed",
+        String(item.dataset.sport === state.filters.sport),
       ),
     );
     loadCourts(true);
@@ -1034,11 +1232,18 @@ function bindEvents() {
     closeDialog("login-dialog");
     showDialog("register-dialog");
   });
-  $("#dashboard-link").addEventListener("click", showDashboard);
-  $("#management-link").addEventListener("click", showManagement);
+  $("#dashboard-link").addEventListener(
+    "click",
+    () => (location.href = "/account.html#bookings"),
+  );
+  $("#management-link").addEventListener(
+    "click",
+    () => (location.href = "/account.html"),
+  );
   $("#refresh-management").addEventListener("click", showManagement);
-  $("#profile-button").addEventListener("click", () =>
-    isCustomer() ? showDashboard() : showManagement(),
+  $("#profile-button").addEventListener(
+    "click",
+    () => (location.href = "/account.html"),
   );
   $("#logout-link").addEventListener("click", logout);
   $("#booking-date").addEventListener("change", loadSlots);
@@ -1099,4 +1304,4 @@ async function init() {
   }
 }
 
-export const ready = init();
+init();
