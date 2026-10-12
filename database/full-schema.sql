@@ -193,7 +193,9 @@ CREATE TABLE IF NOT EXISTS bookings (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   booking_code VARCHAR(40) NOT NULL UNIQUE,
   series_id BIGINT UNSIGNED,
-  user_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NULL,
+  guest_name VARCHAR(150) NULL,
+  guest_phone VARCHAR(20) NULL,
   court_id BIGINT UNSIGNED NOT NULL,
   promotion_id BIGINT UNSIGNED,
   start_at DATETIME(3) NOT NULL, end_at DATETIME(3) NOT NULL,
@@ -516,3 +518,8 @@ CREATE TABLE IF NOT EXISTS auth_attempts (
  email_hash CHAR(64) PRIMARY KEY, failures INT UNSIGNED NOT NULL DEFAULT 0,
  window_start DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Source: database/migrations/005-walk-in-services.sql
+-- Walk-in guests are identified by the linked booking, without a user account.
+ALTER TABLE service_orders MODIFY COLUMN user_id BIGINT UNSIGNED NULL;
