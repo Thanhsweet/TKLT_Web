@@ -1,3 +1,4 @@
+import { createOfflineBooking, collectOfflinePayment } from "./lib/offline-bookings.js";
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import {
@@ -418,10 +419,10 @@ async function slotsForCourt(courtId, date) {
 async function bookingDetail(id, connection = pool) {
   return one(
     `
-    SELECT b.*, c.name AS court_name, s.name AS sport_name, v.id AS venue_id, v.name AS venue_name, v.address, v.district,
+    SELECT b.*, c.name AS court_name, s.name AS sport_name, COALESCE(b.guest_name,u.full_name) AS full_name, COALESCE(b.guest_phone,u.phone) AS phone, v.id AS venue_id, v.name AS venue_name, v.address, v.district,
       p.status AS payment_status, p.provider AS payment_provider, p.qr_content, p.transaction_ref
     FROM bookings b JOIN courts c ON c.id = b.court_id JOIN sports s ON s.id = c.sport_id
-    JOIN venues v ON v.id = c.venue_id LEFT JOIN payments p ON p.booking_id = b.id WHERE b.id = ?
+    JOIN venues v ON v.id = c.venue_id LEFT JOIN users u ON u.id=b.user_id LEFT JOIN payments p ON p.booking_id = b.id WHERE b.id = ?
   `,
     [id],
     connection,
@@ -457,7 +458,7 @@ function serveStatic(res, url) {
   const ext = extname(filePath);
   res.writeHead(200, {
     "Content-Type": mimeTypes[ext] || "application/octet-stream",
-    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600",
+    "Cache-Control": [".html", ".js", ".css"].includes(ext) ? "no-cache" : "public, max-age=3600",
   });
   res.end(readFileSync(filePath));
 }
@@ -1056,8 +1057,8 @@ async function handleOwner(req, res, url) {
         [ownerId],
       ),
       all(
-        `SELECT b.id,b.booking_code,b.start_at,b.status,b.total_amount,c.name AS court_name,v.name AS venue_name,u.full_name
-        FROM bookings b JOIN courts c ON c.id=b.court_id JOIN venues v ON v.id=c.venue_id JOIN users u ON u.id=b.user_id
+        `SELECT b.id,b.booking_code,b.start_at,b.status,b.total_amount,c.name AS court_name,v.name AS venue_name,COALESCE(b.guest_name,u.full_name) AS full_name
+        FROM bookings b JOIN courts c ON c.id=b.court_id JOIN venues v ON v.id=c.venue_id LEFT JOIN users u ON u.id=b.user_id
         WHERE v.owner_id=? ORDER BY b.created_at DESC LIMIT 12`,
         [ownerId],
       ),
@@ -1441,6 +1442,31 @@ async function handleOwner(req, res, url) {
 }
 
 async function handleStaff(req, res, url) {
+  const offlinePath = url.pathname;
+  if (req.method === "GET" && offlinePath === "/api/staff/courts") {
+    const user = await requireUser(req, res, ["receptionist"]);
+    if (!user) return true;
+    const courts = await all(`SELECT c.*,v.name AS venue_name,v.address,v.district
+      FROM courts c JOIN venues v ON v.id=c.venue_id JOIN sports s ON s.id=c.sport_id
+      WHERE c.status='active' AND v.status='active' AND s.status='active' AND EXISTS
+      (SELECT 1 FROM staff_assignments sa WHERE sa.staff_id=? AND sa.venue_id=v.id AND sa.position='receptionist' AND sa.active=TRUE)
+      ORDER BY v.name,c.name`, [user.id]);
+    return json(res, 200, { courts });
+  }
+  const collect = offlinePath.match(/^\/api\/staff\/bookings\/(\d+)\/pay$/);
+  if (req.method === "POST" && (offlinePath === "/api/staff/bookings" || collect)) {
+    const user = await requireUser(req, res, ["receptionist"]);
+    if (!user) return true;
+    const body = await readBody(req);
+    const offlineAudit = (actor, action, type, id, oldValues, newValues, connection) =>
+      audit(actor, action, type, id, oldValues, newValues, req, connection);
+    if (collect) {
+      await collectOfflinePayment(pool, user.id, Number(collect[1]), body.payment_method, offlineAudit);
+      return json(res, 200, { booking: await bookingDetail(Number(collect[1])) });
+    }
+    const id = await createOfflineBooking(pool, user.id, body, { moneyRule, audit: offlineAudit });
+    return json(res, 201, { booking: await bookingDetail(id) });
+  }
   const path = url.pathname;
   if (req.method === "GET" && path === "/api/staff/dashboard") {
     const user = await requireUser(req, res, [
@@ -1456,10 +1482,10 @@ async function handleStaff(req, res, url) {
     let work = [];
     if (user.role === "receptionist")
       work = await all(
-        `SELECT b.id,b.booking_code,b.start_at,b.end_at,b.status,u.full_name,c.name AS court_name,p.status AS payment_status
-      FROM bookings b JOIN users u ON u.id=b.user_id JOIN courts c ON c.id=b.court_id JOIN venues v ON v.id=c.venue_id LEFT JOIN payments p ON p.booking_id=b.id
-      WHERE v.id IN (SELECT venue_id FROM staff_assignments WHERE staff_id=? AND active=TRUE) AND DATE(b.start_at)=CURDATE() ORDER BY b.start_at`,
-        [user.id],
+        `SELECT b.id,b.booking_code,b.start_at,b.end_at,b.status,COALESCE(b.guest_name,u.full_name) AS full_name,COALESCE(b.guest_phone,u.phone) AS phone,b.guest_name,b.total_amount,c.name AS court_name,p.status AS payment_status
+      FROM bookings b LEFT JOIN users u ON u.id=b.user_id JOIN courts c ON c.id=b.court_id JOIN venues v ON v.id=c.venue_id LEFT JOIN payments p ON p.booking_id=b.id
+      WHERE v.id IN (SELECT venue_id FROM staff_assignments WHERE staff_id=? AND active=TRUE) AND DATE(b.start_at)=? ORDER BY b.start_at`,
+        [user.id, url.searchParams.get("date") || new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date())],
       );
     if (user.role === "technician")
       work = await all(
@@ -1545,22 +1571,24 @@ async function handleStaff(req, res, url) {
           "INSERT INTO cleaning_tasks (court_id,booking_id,scheduled_at,status) VALUES (?,?,NOW(),'pending')",
           [booking.court_id, booking.id],
         );
-        const rule = await one(
-          "SELECT lr.points_per_amount FROM loyalty_rules lr JOIN venues v ON v.owner_id=lr.owner_id JOIN courts c ON c.venue_id=v.id WHERE c.id=? AND lr.active=TRUE LIMIT 1",
-          [booking.court_id],
-          connection,
-        );
-        const points = Math.floor(
-          booking.total_amount / Number(rule?.points_per_amount || 10000),
-        );
-        await connection.execute(
-          `INSERT IGNORE INTO loyalty_transactions (user_id,booking_id,points,reason) VALUES (?,?,?,'Hoàn tất booking')`,
-          [booking.user_id, booking.id, points],
-        );
-        await connection.execute(
-          "UPDATE users SET loyalty_points=loyalty_points+? WHERE id=?",
-          [points, booking.user_id],
-        );
+        if (booking.user_id) {
+          const rule = await one(
+            "SELECT lr.points_per_amount FROM loyalty_rules lr JOIN venues v ON v.owner_id=lr.owner_id JOIN courts c ON c.venue_id=v.id WHERE c.id=? AND lr.active=TRUE LIMIT 1",
+            [booking.court_id],
+            connection,
+          );
+          const points = Math.floor(
+            booking.total_amount / Number(rule?.points_per_amount || 10000),
+          );
+          await connection.execute(
+            `INSERT IGNORE INTO loyalty_transactions (user_id,booking_id,points,reason) VALUES (?,?,?,'Hoàn tất booking')`,
+            [booking.user_id, booking.id, points],
+          );
+          await connection.execute(
+            "UPDATE users SET loyalty_points=loyalty_points+? WHERE id=?",
+            [points, booking.user_id],
+          );
+        }
       }
       await audit(
         user.id,
