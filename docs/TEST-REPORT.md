@@ -1,3 +1,29 @@
+# Kiểm thử bản vá Windows
+
+14/14 unit/HTTP test đạt. Kiểm tra đường dẫn với node:path.win32 và node:path.posix, chặn đường dẫn ra ngoài public và khác ổ đĩa. HTTP trên Linux tải được trang chủ, CSS, JS và WebP. Chưa chạy Node trực tiếp trên Windows; kiểm thử giao diện 3.2 bên dưới là đợt trước bản vá.
+
+# Kiểm thử giao diện N01SPORT 3.2
+
+Ngày 12/10/2026, từ gói N01SPORT_Web_MySQL_v3.1(1).zip trong cuộc trò chuyện.
+
+| Kiểm tra đã chạy lại | Kết quả |
+|---|---|
+| Cú pháp JavaScript | Đạt |
+| Unit / HTTP / security / validation | 13/13 đạt |
+| API / nghiệp vụ với MySQL 8.4.11 thật | 18/18 đạt; có backup/restore SQL thật |
+| UI fixtures Chromium | 7 vai trò, 375/1440px, form quản lý đạt |
+| UI live Chromium + MySQL | 66 màn hình thuộc 7 vai trò tại 375px; không JS error, API 500 hay tràn ngang |
+| Responsive trang chủ, chi tiết, chính sách | 375 / 768 / 1024 / 1440px đạt; các ảnh tải thành công |
+| Bộ lọc & sắp xếp | Giá tăng dần đúng thứ tự, ngân sách giảm kết quả, lọc trong nhà, xóa bộ lọc khôi phục danh sách |
+| Menu tài khoản trên mobile | Mở menu, vào Sân thể thao, menu đóng lại |
+| Chi tiết sân thật | sport_slug đúng, amenities là danh sách từ MySQL |
+| Đặt sân qua giao diện | Khách chọn giờ, đăng nhập, trở lại đúng sân/ngày, tải lại slot và tạo booking thành công |
+| Kiểm tra trực quan | Xem ảnh chụp trang chủ desktop/mobile, chi tiết sân, tổng quan chủ sân và hộp đặt lịch |
+
+Không có migration mới. Kiểm thử migration, npm audit và triển khai trong báo cáo 3.1 bên dưới là kết quả trước đó, không được trình bày như chạy lại trong đợt giao diện 3.2. Bản này chưa được triển khai lên hosting thật; chưa kiểm thử Safari/Firefox, tải đồng thời lớn, SMTP hay thanh toán ngân hàng thật. Ảnh chụp kiểm thử không nằm trong gói bàn giao; có thể tạo lại bằng các lệnh test.
+
+---
+
 # Báo cáo kiểm thử N01SPORT 3.1
 
 Ngày 09/10/2026. Mã nguồn dùng chính bản N01 của cuộc trò chuyện, giữ HTML/CSS/JavaScript, backend Node.js và MySQL.
