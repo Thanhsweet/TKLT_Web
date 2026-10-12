@@ -1,0 +1,136 @@
+/* N01SPORT v3.2 — shared semantic design tokens */
+:root {
+  --color-ink: #183b32;
+  --color-muted: #576b63;
+  --color-brand: #176348;
+  --color-brand-hover: #104b36;
+  --color-lime: #dbf78e;
+  --color-paper: #f7f8f2;
+  --color-surface: #fff;
+  --color-border: #dce5dc;
+  --color-danger: #ae303a;
+  --color-focus: #a34810;
+  --font-body:
+    "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --shadow-soft: 0 12px 40px #183b320b;
+  --radius-card: 20px;
+}
+html {
+  scroll-padding-top: 96px;
+}
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+[hidden] {
+  display: none !important;
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    color 0.18s,
+    box-shadow 0.18s;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  overflow-wrap: break-word;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+}
+.n01-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 44px;
+  font-weight: 850;
+  letter-spacing: -0.7px;
+  font-size: 21px;
+}
+.n01-brand .brand-symbol {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--color-brand);
+  color: var(--color-lime);
+  font-size: 22px;
+  font-style: italic;
+  letter-spacing: -4px;
+  padding-right: 4px;
+}
+.n01-brand .brand-word {
+  color: inherit;
+}
+.n01-brand .brand-word b {
+  font-weight: 850;
+}
+.n01-brand .brand-word em {
+  font-style: normal;
+  color: var(--color-brand);
+  font-weight: 450;
+}
+.n01-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--color-brand);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.image-note {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
