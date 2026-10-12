@@ -4,15 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Chi tiết sân | N01SPORT</title>
+    <link rel="stylesheet" href="/css/design-system.css" />
     <link rel="stylesheet" href="/css/portal.css" />
     <link rel="icon" href="/favicon.svg" />
   </head>
   <body>
     <header class="topbar">
-      <a class="logo" href="/">N01SPORT</a><a href="/#courts">Tìm sân</a
-      ><a href="/account.html">Tài khoản</a>
+      <a class="n01-brand" href="/" aria-label="N01SPORT — Trang chủ"
+        ><span class="brand-symbol" aria-hidden="true">N</span
+        ><span class="brand-word"><b>N01</b><em>SPORT</em></span></a
+      ><a href="/#courts">Tìm sân</a><a href="/account.html">Tài khoản</a>
     </header>
-    <main id="court" class="receipt"><p role="status">Đang tải sân…</p></main>
+    <a class="skip" href="#court">Đến nội dung</a>
+    <main id="court" class="court-detail" tabindex="-1">
+      <p role="status">Đang tải sân…</p>
+    </main>
     <script type="module" src="/js/court.js"></script>
   </body>
 </html>
