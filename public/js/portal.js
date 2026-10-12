@@ -1,3 +1,4 @@
+import { icon } from "./ui.js";
 const $ = (s) => document.querySelector(s),
   view = $("#view"),
   actions = $("#actions");
@@ -76,15 +77,15 @@ const labels = {
   rental: "Cho thuê",
   technical: "Kỹ thuật",
 };
-const status = (s) => `<span class="status">${escape(labels[s] || s)}</span>`;
+const status = (s) =>
+  `<span class="status status-${escape(String(s).replace(/[^a-z_]/g, ""))}">${escape(labels[s] || s)}</span>`;
 let user,
   options = {},
   poll = null,
   routeVersion = 0,
   actionMap = new Map(),
   nextAction = 0,
-  formSubmit = null,
-  receptionDate = null;
+  formSubmit = null;
 async function api(path, method = "GET", body) {
   const headers = { "Content-Type": "application/json" };
   if (method !== "GET")
@@ -118,12 +119,14 @@ function toolbar(label, fn, kind = "primary") {
 function table(headers, rows) {
   return rows.length
     ? `<div class="table-wrap" tabindex="0" aria-label="Bảng dữ liệu, cuộn ngang để xem thêm"><table><thead><tr>${headers.map((h) => `<th scope="col">${escape(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td data-label="${escape(headers[i])}">${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
-    : '<div class="empty">Chưa có dữ liệu. Các thao tác mới sẽ xuất hiện tại đây.</div>';
+    : `<div class="empty">${icon("calendar")}<strong>Chưa có dữ liệu</strong><p>Các thông tin mới sẽ xuất hiện tại đây khi có hoạt động.</p></div>`;
 }
 function page(title, subtitle = "") {
   clearInterval(poll);
   poll = null;
+  document.title = title + " | N01SPORT";
   $("#title").textContent = title;
+  $("#nav-toggle").innerHTML = escape(title) + icon("grid");
   $("#subtitle").textContent = subtitle;
   actions.innerHTML = "";
   view.innerHTML = '<div class="loading" role="status">Đang tải dữ liệu…</div>';
@@ -935,11 +938,8 @@ async function work() {
     ]),
   );
 }
-async function reception(date = receptionDate || today(), q = "") {
-  receptionDate = date;
+async function reception(date = today(), q = "") {
   page("Tra cứu & tiếp nhận booking");
-  if (user.role === "receptionist")
-    toolbar("Đặt sân tại quầy", () => walkInBooking(date));
   const d = await api(
     "/api/manage/bookings?" + new URLSearchParams({ date, q }),
   );
@@ -957,7 +957,7 @@ async function reception(date = receptionDate || today(), q = "") {
       ],
       d.bookings.map((b) => [
         b.id + "<small>" + escape(b.booking_code) + "</small>",
-        escape(b.full_name) + (b.guest_name ? "<small>Đặt tại quầy</small>" : ""),
+        escape(b.full_name),
         escape(b.court_name),
         time(b.start_at),
         status(b.payment_status),
@@ -984,7 +984,7 @@ async function reception(date = receptionDate || today(), q = "") {
                 )
                 .join("")
             : ""
-        }${user.role === "receptionist" && b.guest_name && b.payment_status === "pending" && ["confirmed", "checked_in", "completed"].includes(b.status) ? button("Đã nhận tiền mặt", () => mutate(`/api/staff/bookings/${b.id}/pay`, { payment_method: "cash" })) + button("Đã nhận chuyển khoản", () => mutate(`/api/staff/bookings/${b.id}/pay`, { payment_method: "bank_transfer" })) : ""}${["confirmed", "checked_in"].includes(b.status) ? button("Dịch vụ", () => newOrder(b.id)) : ""}${button("Phiếu thu", () => (location.hash = "invoice=" + b.id))}</div>`,
+        }${["confirmed", "checked_in"].includes(b.status) ? button("Dịch vụ", () => newOrder(b.id)) : ""}${button("Phiếu thu", () => (location.hash = "invoice=" + b.id))}</div>`,
       ]),
     );
   $("#booking-filter").onsubmit = (e) => {
@@ -992,50 +992,6 @@ async function reception(date = receptionDate || today(), q = "") {
     const fd = new FormData(e.target);
     reception(fd.get("date"), fd.get("q")).catch((e) => toast(e.message));
   };
-}
-async function walkInBooking(date) {
-  const { courts } = await api("/api/staff/courts");
-  if (!courts.length) return toast("Chưa có sân hoạt động tại cơ sở được phân công.");
-  let slots = [], request = 0;
-  edit("Đặt sân cho khách tại quầy", [
-    field("court_id", "Sân", "select", { options: courts.map((c) => [c.id, `${c.venue_name} · ${c.name}`]) }),
-    field("date", "Ngày chơi", "date", { default: date < today() ? today() : date }),
-    field("slot", "Khung giờ còn trống", "select", { options: [["", "Đang tải khung giờ…"]] }),
-    field("guest_name", "Tên khách"),
-    field("guest_phone", "Số điện thoại", "tel"),
-    field("payment_method", "Thu tiền", "select", { default: "unpaid", options: [["unpaid", "Chưa thu tiền"], ["cash", "Đã nhận tiền mặt"], ["bank_transfer", "Đã nhận chuyển khoản"]], hint: "Chỉ chọn đã nhận tiền khi đã thu đủ tiền của khách." }),
-    field("note", "Ghi chú", "textarea", { optional: true }),
-  ], {}, async (body) => {
-    const slot = slots.find((s) => s.start_at === body.slot);
-    if (!slot || $("#field-slot").disabled) throw new Error("Vui lòng chọn khung giờ còn trống.");
-    await api("/api/staff/bookings", "POST", {
-      court_id: Number(body.court_id), start_at: slot.start_at, end_at: slot.end_at,
-      guest_name: body.guest_name.trim(), guest_phone: body.guest_phone.trim(),
-      payment_method: body.payment_method, note: body.note.trim(),
-    });
-    receptionDate = body.date;
-  });
-  $("#field-date").min = today();
-  $("#field-guest_name").minLength = 2;
-  $("#field-guest_name").maxLength = 150;
-  const reload = async () => {
-    const version = ++request, select = $("#field-slot");
-    slots = []; select.disabled = true;
-    select.innerHTML = '<option value="">Đang tải khung giờ…</option>';
-    try {
-      const data = await api(`/api/courts/${Number($("#field-court_id").value)}/slots?date=${encodeURIComponent($("#field-date").value)}`);
-      if (version !== request) return;
-      slots = data.slots.filter((s) => s.available);
-      select.innerHTML = '<option value="">Chọn khung giờ</option>' + slots.map((s) => `<option value="${escape(s.start_at)}">${escape(s.label)} · ${money(s.price)}</option>`).join("");
-      select.disabled = !slots.length;
-      if (!slots.length) select.innerHTML = '<option value="">Không còn khung giờ trống</option>';
-    } catch (error) {
-      if (version === request) { select.innerHTML = '<option value="">Không tải được khung giờ</option>'; toast(error.message); }
-    }
-  };
-  $("#field-court_id").onchange = reload;
-  $("#field-date").onchange = reload;
-  await reload();
 }
 async function maintenance() {
   page("Yêu cầu kỹ thuật & bảo trì");
@@ -1420,6 +1376,167 @@ async function errors() {
     ]),
   );
 }
+async function overview() {
+  page(
+    "Tổng quan",
+    `Chào ${user.full_name}. Cùng bắt đầu một ngày thật chủ động.`,
+  );
+  toolbar("Làm mới", () => route(), "");
+  let metrics = [],
+    rows = [],
+    links = [],
+    detail = "",
+    heading = "Hoạt động gần đây";
+  const count = (value) => Number(value || 0).toLocaleString("vi-VN");
+  if (["customer", "coach"].includes(user.role)) {
+    const d = await api("/api/bookings"),
+      all = d.bookings;
+    const upcoming = all.filter(
+      (b) =>
+        ["confirmed", "checked_in"].includes(b.status) &&
+        new Date(
+          String(b.end_at).replace(" ", "T") +
+            (String(b.end_at).includes("Z") ? "" : "+07:00"),
+        ) > new Date(),
+    );
+    metrics = [
+      [upcoming.length, "Lịch chơi sắp tới", "calendar"],
+      [
+        all.filter((b) => b.status === "pending").length,
+        "Đơn chờ thanh toán",
+        "wallet",
+      ],
+      [
+        all.filter((b) => b.status === "completed").length,
+        "Buổi chơi hoàn tất",
+        "chart",
+      ],
+      [user.loyalty_points || 0, "Điểm tích lũy", "gift"],
+    ];
+    rows = all
+      .slice(0, 5)
+      .map((b) => [
+        escape(b.court_name),
+        time(b.start_at),
+        status(b.status),
+        `<a class="text-link" href="#${b.status === "pending" ? "payment=" + b.id : "bookings"}">${b.status === "pending" ? "Thanh toán" : "Xem lịch"}</a>`,
+      ]);
+    links = [
+      [
+        "/#courts",
+        "Đặt sân mới",
+        "Chọn sân cho buổi chơi tiếp theo",
+        "calendar",
+      ],
+      ["#bookings", "Lịch của tôi", "Theo dõi lịch đặt và thanh toán", "grid"],
+      ["#loyalty", "Điểm & ưu đãi", "Xem quyền lợi trong tài khoản", "gift"],
+    ];
+  } else if (user.role === "owner") {
+    const d = await api("/api/owner/dashboard");
+    metrics = [
+      [d.courts.length, "Sân đang quản lý", "grid"],
+      [d.metrics.confirmed || 0, "Đơn đã xác nhận", "calendar"],
+      [
+        d.refunds.filter((r) => r.status === "pending").length,
+        "Yêu cầu hoàn chờ xử lý",
+        "wallet",
+      ],
+      [d.staff.length, "Nhân sự được phân công", "user"],
+    ];
+    rows = d.recent
+      .slice(0, 5)
+      .map((b) => [
+        escape(b.court_name),
+        time(b.start_at),
+        status(b.status),
+        escape(b.full_name),
+      ]);
+    links = [
+      [
+        "#reception",
+        "Tiếp nhận đặt sân",
+        "Tra cứu, check-in và xử lý lịch",
+        "calendar",
+      ],
+      ["#courts", "Quản lý sân", "Cập nhật trạng thái và thông tin", "grid"],
+      [
+        "#reports",
+        "Báo cáo vận hành",
+        "Theo dõi dữ liệu theo thời gian",
+        "chart",
+      ],
+    ];
+  } else if (user.role === "admin") {
+    const d = await api("/api/admin/dashboard");
+    metrics = [
+      [d.metrics.users || 0, "Tài khoản toàn hệ thống", "user"],
+      [d.metrics.venues || 0, "Cơ sở thể thao", "building"],
+      [d.metrics.courts || 0, "Sân toàn hệ thống", "grid"],
+      [d.metrics.bookings || 0, "Tổng lịch đặt", "calendar"],
+    ];
+    heading = "Cơ sở mới nhất";
+    detail = table(
+      ["Cơ sở", "Khu vực", "Trạng thái", "Chủ sân"],
+      d.venues
+        .slice(0, 5)
+        .map((v) => [
+          escape(v.name),
+          escape(v.district),
+          status(v.status),
+          escape(v.owner_name),
+        ]),
+    );
+    links = [
+      [
+        "#adminvenues",
+        "Duyệt cơ sở",
+        "Quản lý các địa điểm trên nền tảng",
+        "building",
+      ],
+      ["#users", "Tài khoản", "Kiểm tra tài khoản và phân quyền", "user"],
+      [
+        "#events",
+        "Đối soát ngân hàng",
+        "Theo dõi giao dịch cần kiểm tra",
+        "wallet",
+      ],
+    ];
+  } else {
+    const d = await api("/api/staff/dashboard");
+    metrics = [
+      [d.work.length, "Mục trong danh sách công việc", "tools"],
+      [
+        d.work.filter((w) =>
+          ["pending", "open", "assigned", "confirmed"].includes(w.status),
+        ).length,
+        "Chờ tiếp nhận hoặc thực hiện",
+        "calendar",
+      ],
+      [
+        d.work.filter((w) => ["in_progress", "checked_in"].includes(w.status))
+          .length,
+        "Đang thực hiện",
+        "chart",
+      ],
+      [d.assignments.length, "Phân công cơ sở", "building"],
+    ];
+    links = [
+      [
+        "#work",
+        "Công việc của tôi",
+        "Xem chi tiết và cập nhật tiến độ",
+        "tools",
+      ],
+      ["#notifications", "Thông báo", "Theo dõi cập nhật công việc", "bell"],
+      ["#support", "Yêu cầu hỗ trợ", "Trao đổi khi cần trợ giúp", "help"],
+    ];
+    heading = "Không gian công việc";
+    detail =
+      '<div class="panel"><h3>Sẵn sàng cho ca làm việc</h3><p class="muted">Mở Công việc của tôi để xem đầy đủ lịch và các thao tác phù hợp với vai trò của bạn.</p><a class="text-link" href="#work">Đi đến công việc →</a></div>';
+  }
+  const personal = ["customer", "coach"].includes(user.role);
+  view.innerHTML = `<section class="overview-banner"><div><p>${personal ? "HẸN NHAU TRÊN SÂN" : "KHÔNG GIAN VẬN HÀNH"}</p><h2>${personal ? "Dành thời gian cho điều bạn thích." : "Mọi hoạt động. Cùng một nhịp."}</h2><span>${personal ? "Lịch đặt, ưu đãi và trải nghiệm của bạn — kết nối tại đây." : "Theo dõi thông tin, phối hợp công việc và chủ động mỗi ngày."}</span></div>${icon(personal ? "racket" : "building")}</section><div class="cards overview-metrics">${metrics.map(([v, label, i]) => `<div class="metric">${icon(i)}<strong>${count(v)}</strong><span>${label}</span></div>`).join("")}</div><section class="shortcut-grid" aria-label="Truy cập nhanh">${links.map(([href, title, desc, i]) => `<a class="shortcut" href="${href}">${icon(i)}<div><strong>${title}</strong><span>${desc}</span></div>${icon("arrow")}</a>`).join("")}</section><div class="overview-section-heading"><h2>${heading}</h2><span>Dữ liệu tại thời điểm tải trang</span></div>${detail || table(["Sân", "Thời gian", "Trạng thái", personal ? "Thao tác" : "Người đặt"], rows)}`;
+}
 const common = [
   ["profile", "Hồ sơ"],
   ["notifications", "Thông báo"],
@@ -1479,8 +1596,80 @@ function navigation() {
         : []),
       ...common,
     ];
-  $("#navigation").innerHTML = tabs
-    .map(([k, l]) => `<a href="#${k}" data-tab="${k}">${escape(l)}</a>`)
+  tabs.unshift(["overview", "Tổng quan"]);
+  const groups = [
+    [
+      "KHÔNG GIAN LÀM VIỆC",
+      [
+        "overview",
+        "bookings",
+        "reception",
+        "work",
+        "coach",
+        "orders",
+        "loyalty",
+      ],
+    ],
+    [
+      "QUẢN LÝ CƠ SỞ",
+      [
+        "venues",
+        "courts",
+        "images",
+        "prices",
+        "services",
+        "promotions",
+        "rewards",
+        "staff",
+        "maintenance",
+        "blocks",
+      ],
+    ],
+    [
+      "TÀI CHÍNH & DỮ LIỆU",
+      ["reports", "transactions", "bank", "refunds", "events"],
+    ],
+    [
+      "QUẢN TRỊ HỆ THỐNG",
+      ["users", "adminvenues", "settings", "backups", "audit", "errors"],
+    ],
+    ["TÀI KHOẢN", ["profile", "notifications", "support"]],
+  ];
+  const icons = {
+    overview: "grid",
+    bookings: "calendar",
+    reception: "calendar",
+    work: "tools",
+    coach: "calendar",
+    orders: "bag",
+    loyalty: "gift",
+    venues: "building",
+    courts: "grid",
+    prices: "wallet",
+    bank: "wallet",
+    reports: "chart",
+    transactions: "wallet",
+    refunds: "wallet",
+    events: "wallet",
+    staff: "user",
+    users: "user",
+    profile: "user",
+    notifications: "bell",
+    support: "help",
+    promotions: "gift",
+    rewards: "gift",
+    maintenance: "tools",
+    blocks: "calendar",
+  };
+  $("#navigation").innerHTML = groups
+    .map(([label, keys]) => {
+      const items = keys
+        .map((key) => tabs.find((t) => t[0] === key))
+        .filter(Boolean);
+      return items.length
+        ? `<div class="nav-group"><p>${label}</p>${items.map(([k, l]) => `<a href="#${k}" data-tab="${k}">${icon(icons[k])}<span>${escape(l)}</span></a>`).join("")}</div>`
+        : "";
+    })
     .join("");
   return tabs;
 }
@@ -1490,7 +1679,7 @@ async function authScreen(reset) {
     "Đăng nhập để quản lý lịch và sử dụng dịch vụ.",
   );
   $("#navigation").innerHTML = "";
-  view.innerHTML = `<section class="panel"><p>${reset ? "Liên kết chỉ dùng một lần, hết hạn sau 30 phút." : "Nếu chưa có tài khoản, đăng ký tại trang tìm sân."}</p>${button(
+  view.innerHTML = `<div class="auth-layout"><div class="auth-image"><img src="/assets/tennis.webp" width="1536" height="1024" alt="Hình minh họa bạn bè cùng chơi tennis"><div><p>KHÔNG GIAN CỦA BẠN</p><h2>Giữ nhịp chơi.<br>Kết nối mỗi ngày.</h2><small>Ảnh minh họa</small></div></div><section class="panel auth-panel"><span class="auth-emblem">${icon("user")}</span><h2>${reset ? "Lấy lại quyền truy cập" : "Chào mừng đến N01SPORT"}</h2><p>${reset ? "Liên kết chỉ dùng một lần, hết hạn sau 30 phút." : "Nếu chưa có tài khoản, đăng ký tại trang tìm sân."}</p>${button(
     reset ? "Đặt mật khẩu mới" : "Đăng nhập",
     () =>
       reset
@@ -1527,10 +1716,12 @@ async function authScreen(reset) {
         toast(d.message);
       },
     ),
-  )}</section>`;
+  )}<a class="text-link" href="/">Khám phá sân trước khi đăng nhập →</a></section></div>`;
 }
 async function route() {
   const version = ++routeVersion;
+  $("#workspace-sidebar").classList.remove("nav-open");
+  $("#nav-toggle").setAttribute("aria-expanded", "false");
   const hash = location.hash.slice(1),
     [key, id] = hash.split("=");
   for (const a of $("#navigation").querySelectorAll("a")) {
@@ -1545,6 +1736,7 @@ async function route() {
     else if (key === "ticket") await ticket(Number(id));
     else {
       const f = {
+        overview,
         profile,
         bookings,
         notifications,
@@ -1587,6 +1779,14 @@ async function boot() {
     options = await api("/api/portal/options");
     $("#identity").textContent = user.full_name + " · " + labels[user.role];
     $("#logout").hidden = false;
+    $("#sidebar-name").textContent = user.full_name;
+    $("#sidebar-role").textContent = labels[user.role];
+    $("#sidebar-avatar").textContent = user.full_name
+      .trim()
+      .slice(0, 1)
+      .toUpperCase();
+    $("#workspace-context").textContent =
+      "N01SPORT / " + labels[user.role].toUpperCase();
     navigation();
   }
   await route();
@@ -1594,6 +1794,17 @@ async function boot() {
 $("#logout").onclick = async () => {
   await api("/api/auth/logout", "POST", {});
   location.href = "/";
+};
+$("#navigation").addEventListener("click", (e) => {
+  if (!e.target.closest("a")) return;
+  const mobile = $("#nav-toggle").getBoundingClientRect().height > 0;
+  $("#workspace-sidebar").classList.remove("nav-open");
+  $("#nav-toggle").setAttribute("aria-expanded", "false");
+  if (mobile) $("#content").focus({ preventScroll: true });
+});
+$("#nav-toggle").onclick = () => {
+  const open = $("#workspace-sidebar").classList.toggle("nav-open");
+  $("#nav-toggle").setAttribute("aria-expanded", String(open));
 };
 window.addEventListener("hashchange", () => route());
 boot().catch((e) => {
