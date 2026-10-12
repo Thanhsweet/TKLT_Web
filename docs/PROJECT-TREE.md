@@ -1,6 +1,6 @@
-# Cấu trúc thư mục N01SPORT 3.1
+# Cấu trúc thư mục N01SPORT 3.2
 
-Giải nén vào TKLT để có đúng thư mục `_Web`. Tất cả mã nguồn và cấu hình cần thiết được liệt kê dưới đây; thư viện Node sẽ được cài bằng npm ci.
+Giải nén để có thư mục `_Web`. `node_modules` được cài bằng `npm ci`; không đóng gói dữ liệu cá nhân, file .env hoặc ảnh chụp kiểm thử.
 
 ```text
 _Web/
@@ -26,7 +26,9 @@ _Web/
   docker-compose.yml
   docs/CHANGELOG.md
   docs/DEPLOYMENT.md
+  docs/DESIGN-SYSTEM.md
   docs/PAYMENTS.md
+  docs/PROJECT-TREE.md
   docs/QUICKSTART-WINDOWS.md
   docs/TEST-REPORT.md
   docs/function-coverage.md
@@ -44,7 +46,18 @@ _Web/
   package-lock.json
   package.json
   public/account.html
+  public/assets/badminton-640.webp
+  public/assets/badminton.webp
+  public/assets/basketball-640.webp
+  public/assets/basketball.webp
+  public/assets/football-640.webp
+  public/assets/football.webp
+  public/assets/pickleball-640.webp
+  public/assets/pickleball.webp
+  public/assets/tennis-640.webp
+  public/assets/tennis.webp
   public/court.html
+  public/css/design-system.css
   public/css/portal.css
   public/css/styles.css
   public/favicon.svg
@@ -53,6 +66,7 @@ _Web/
   public/js/court.js
   public/js/policies.js
   public/js/portal.js
+  public/js/ui.js
   public/policies.html
   scripts/check.js
   scripts/create-admin.js
@@ -72,4 +86,4 @@ _Web/
   tests/validation.test.js
 ```
 
-Bắt đầu với README.md và docs/QUICKSTART-WINDOWS.md. Triển khai trên mạng theo docs/DEPLOYMENT.md.
+Đọc README.md để chạy; docs/QUICKSTART-WINDOWS.md cho Windows; docs/DESIGN-SYSTEM.md để chỉnh giao diện; docs/DEPLOYMENT.md để đưa lên mạng.
