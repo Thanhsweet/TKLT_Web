@@ -91,6 +91,7 @@ test('entry point nạp module, khởi tạo phiên và gắn nút đặt sân l
   const app = frontend(t, (path) => {
     if (path === '/api/bootstrap') return { sports: [], districts: [], user: { role: 'receptionist', full_name: 'Lễ Tân', loyalty_points: 0 } };
     if (path === '/api/staff/courts') return { courts: [{ id: 9, name: 'Sân A', venue_name: 'Cơ sở A', address: '', district: '' }] };
+    if (path === '/api/staff/bookings') return { booking: { id: 42, booking_code: 'N01-TEST', court_name: 'Sân A', start_at: '2030-01-02T08:00:00', total_amount: 100000, guest_name: 'Khách tại quầy', guest_phone: '0901234567', payment_status: 'pending' } };
     if (path.includes('/slots?')) return { slots: [] };
     return { courts: [] };
   });
@@ -100,5 +101,12 @@ test('entry point nạp module, khởi tạo phiên và gắn nút đặt sân l
   assert.equal(app.element('#profile-name').textContent, 'Lễ Tân');
   await app.element('#staff-booking-create').dispatch('click');
   assert.equal(app.element('#booking-dialog').open, true);
+  app.state.selectedSlot = { start_at: '2030-01-02T08:00:00', end_at: '2030-01-02T09:00:00' };
+  app.element('#guest-name').value = 'Khách tại quầy';
+  app.element('#guest-phone').value = '0901234567';
+  await app.element('#confirm-booking').dispatch('click');
+  assert.ok(app.calls.some((c) => c.path === '/api/staff/bookings'));
+  assert.equal(app.element('#success-dialog').open, true);
+  assert.equal(app.element('#login-dialog').open, false);
   assert.equal(app.element('#toast').textContent, '');
 });
