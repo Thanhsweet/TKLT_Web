@@ -9,6 +9,7 @@ function portalFixture() {
     if (!elements.has(selector)) elements.set(selector, {
       value: "", innerHTML: "", textContent: "", hidden: false, disabled: false,
       handlers: {}, elements: [],
+      classList: { remove() {}, add() {}, toggle() {} },
       addEventListener(name, fn) { this.handlers[name] = fn; },
       setAttribute() {}, removeAttribute() {}, focus() {},
       querySelectorAll: () => [],
@@ -21,6 +22,7 @@ function portalFixture() {
   const slot = { start_at: "2030-01-02T08:00:00", end_at: "2030-01-02T09:00:00", label: "08:00 – 09:00", price: 100000, available: true };
   const user = { role: "receptionist", full_name: "Lễ Tân" };
   const context = {
+    icon: () => '<svg aria-hidden="true"></svg>',
     document: { querySelector: element, addEventListener() {} },
     window: { addEventListener() {} }, location: { hash: "#work" },
     URLSearchParams, Intl, Date, clearInterval() {}, clearTimeout() {}, setTimeout() {},
@@ -28,6 +30,7 @@ function portalFixture() {
       calls.push({ path, options });
       let data = {};
       if (path === "/api/staff/courts") data = { courts: [{ id: 9, name: "Sân A", venue_name: "Cơ sở A" }] };
+      if (path.startsWith("/api/services?booking_id=")) data = { services: [{ id: 12, name: "Áo bib", price: 25000, stock_quantity: 3 }] };
       if (path.includes("/slots?")) data = { slots: available ? [slot, { ...slot, start_at: "2030-01-02T09:00:00", available: false }] : [] };
       if (path === "/api/csrf") data = { token: "csrf-fixture" };
       if (path === "/api/auth/me") data = { user };
@@ -36,8 +39,8 @@ function portalFixture() {
     },
   };
   const source = readFileSync(new URL("../public/js/portal.js", import.meta.url), "utf8");
-  runInNewContext(source.slice(0, source.lastIndexOf("boot().catch")) +
-    "\nglobalThis.portal = { reception, walkInBooking, setUser(value) { user = value; } };", context);
+  runInNewContext(source.slice(0, source.lastIndexOf("boot().catch")).replace('import { icon } from "./ui.js";', '') +
+    "\nglobalThis.portal = { reception, walkInBooking, newOrder, setUser(value) { user = value; } };", context);
   context.portal.setUser(user);
   element("#field-court_id").value = "9";
   element("#field-date").value = "2030-01-02";
@@ -78,4 +81,21 @@ test("portal không tạo đơn khi không còn khung giờ trống", async () =
   assert.equal(app.calls.some((c) => c.path === "/api/staff/bookings"), false);
   assert.equal(app.element("#form-error").hidden, false);
   assert.equal(app.element("#editor").open, true);
+});
+
+test("lễ tân thêm dịch vụ vào đúng booking của khách", async () => {
+  const app = portalFixture();
+  await app.portal.newOrder(42);
+  assert.match(app.element("#fields").innerHTML, /Áo bib/);
+  app.element("#editor-form").elements = [
+    { name: "service_id", value: "12" }, { name: "quantity", value: "2" },
+  ];
+  await app.element("#editor-form").handlers.submit({ preventDefault() {}, submitter: {} });
+  const sent = app.calls.find((c) => c.path === "/api/orders");
+  assert.ok(sent);
+  assert.equal(sent.options.headers["X-CSRF-Token"], "csrf-fixture");
+  assert.deepEqual(JSON.parse(sent.options.body), {
+    booking_id: 42, items: [{ service_id: "12", quantity: "2" }],
+  });
+  assert.equal(app.element("#editor").open, false);
 });
