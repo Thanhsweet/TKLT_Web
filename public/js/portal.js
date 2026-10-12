@@ -85,7 +85,8 @@ let user,
   routeVersion = 0,
   actionMap = new Map(),
   nextAction = 0,
-  formSubmit = null;
+  formSubmit = null,
+  receptionDate = null;
 async function api(path, method = "GET", body) {
   const headers = { "Content-Type": "application/json" };
   if (method !== "GET")
@@ -938,8 +939,11 @@ async function work() {
     ]),
   );
 }
-async function reception(date = today(), q = "") {
+async function reception(date = receptionDate || today(), q = "") {
+  receptionDate = date;
   page("Tra cứu & tiếp nhận booking");
+  if (user.role === "receptionist")
+    toolbar("Đặt sân tại quầy", () => walkInBooking(date));
   const d = await api(
     "/api/manage/bookings?" + new URLSearchParams({ date, q }),
   );
@@ -957,7 +961,7 @@ async function reception(date = today(), q = "") {
       ],
       d.bookings.map((b) => [
         b.id + "<small>" + escape(b.booking_code) + "</small>",
-        escape(b.full_name),
+        escape(b.full_name) + (b.guest_name ? "<small>Đặt tại quầy</small>" : ""),
         escape(b.court_name),
         time(b.start_at),
         status(b.payment_status),
@@ -984,7 +988,7 @@ async function reception(date = today(), q = "") {
                 )
                 .join("")
             : ""
-        }${["confirmed", "checked_in"].includes(b.status) ? button("Dịch vụ", () => newOrder(b.id)) : ""}${button("Phiếu thu", () => (location.hash = "invoice=" + b.id))}</div>`,
+        }${user.role === "receptionist" && b.guest_name && b.payment_status === "pending" && ["confirmed", "checked_in", "completed"].includes(b.status) ? button("Đã nhận tiền mặt", () => mutate(`/api/staff/bookings/${b.id}/pay`, { payment_method: "cash" })) + button("Đã nhận chuyển khoản", () => mutate(`/api/staff/bookings/${b.id}/pay`, { payment_method: "bank_transfer" })) : ""}${["confirmed", "checked_in"].includes(b.status) ? button("Dịch vụ", () => newOrder(b.id)) : ""}${button("Phiếu thu", () => (location.hash = "invoice=" + b.id))}</div>`,
       ]),
     );
   $("#booking-filter").onsubmit = (e) => {
@@ -992,6 +996,50 @@ async function reception(date = today(), q = "") {
     const fd = new FormData(e.target);
     reception(fd.get("date"), fd.get("q")).catch((e) => toast(e.message));
   };
+}
+async function walkInBooking(date) {
+  const { courts } = await api("/api/staff/courts");
+  if (!courts.length) return toast("Chưa có sân hoạt động tại cơ sở được phân công.");
+  let slots = [], request = 0;
+  edit("Đặt sân cho khách tại quầy", [
+    field("court_id", "Sân", "select", { options: courts.map((c) => [c.id, `${c.venue_name} · ${c.name}`]) }),
+    field("date", "Ngày chơi", "date", { default: date < today() ? today() : date }),
+    field("slot", "Khung giờ còn trống", "select", { options: [["", "Đang tải khung giờ…"]] }),
+    field("guest_name", "Tên khách"),
+    field("guest_phone", "Số điện thoại", "tel"),
+    field("payment_method", "Thu tiền", "select", { default: "unpaid", options: [["unpaid", "Chưa thu tiền"], ["cash", "Đã nhận tiền mặt"], ["bank_transfer", "Đã nhận chuyển khoản"]], hint: "Chỉ chọn đã nhận tiền khi đã thu đủ tiền của khách." }),
+    field("note", "Ghi chú", "textarea", { optional: true }),
+  ], {}, async (body) => {
+    const slot = slots.find((s) => s.start_at === body.slot);
+    if (!slot || $("#field-slot").disabled) throw new Error("Vui lòng chọn khung giờ còn trống.");
+    await api("/api/staff/bookings", "POST", {
+      court_id: Number(body.court_id), start_at: slot.start_at, end_at: slot.end_at,
+      guest_name: body.guest_name.trim(), guest_phone: body.guest_phone.trim(),
+      payment_method: body.payment_method, note: body.note.trim(),
+    });
+    receptionDate = body.date;
+  });
+  $("#field-date").min = today();
+  $("#field-guest_name").minLength = 2;
+  $("#field-guest_name").maxLength = 150;
+  const reload = async () => {
+    const version = ++request, select = $("#field-slot");
+    slots = []; select.disabled = true;
+    select.innerHTML = '<option value="">Đang tải khung giờ…</option>';
+    try {
+      const data = await api(`/api/courts/${Number($("#field-court_id").value)}/slots?date=${encodeURIComponent($("#field-date").value)}`);
+      if (version !== request) return;
+      slots = data.slots.filter((s) => s.available);
+      select.innerHTML = '<option value="">Chọn khung giờ</option>' + slots.map((s) => `<option value="${escape(s.start_at)}">${escape(s.label)} · ${money(s.price)}</option>`).join("");
+      select.disabled = !slots.length;
+      if (!slots.length) select.innerHTML = '<option value="">Không còn khung giờ trống</option>';
+    } catch (error) {
+      if (version === request) { select.innerHTML = '<option value="">Không tải được khung giờ</option>'; toast(error.message); }
+    }
+  };
+  $("#field-court_id").onchange = reload;
+  $("#field-date").onchange = reload;
+  await reload();
 }
 async function maintenance() {
   page("Yêu cầu kỹ thuật & bảo trì");
