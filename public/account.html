@@ -6,26 +6,50 @@
     <title>Tài khoản và vận hành | N01SPORT</title>
     <meta name="robots" content="noindex" />
     <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="/css/design-system.css" />
     <link rel="stylesheet" href="/css/portal.css" />
   </head>
   <body>
     <a class="skip" href="#content">Đến nội dung</a>
     <header class="topbar">
-      <a class="logo" href="/">N<span>01</span>SPORT</a
+      <a class="n01-brand" href="/" aria-label="N01SPORT — Trang chủ"
+        ><span class="brand-symbol" aria-hidden="true">N</span
+        ><span class="brand-word"><b>N01</b><em>SPORT</em></span></a
       ><a href="/#courts">Tìm sân</a><span id="identity"></span
       ><button id="logout" class="quiet" hidden>Đăng xuất</button>
     </header>
     <div class="workspace">
-      <aside>
-        <p class="eyebrow">KHÔNG GIAN CỦA BẠN</p>
+      <aside class="workspace-sidebar" id="workspace-sidebar">
+        <button
+          type="button"
+          id="nav-toggle"
+          class="nav-toggle"
+          aria-expanded="false"
+          aria-controls="navigation"
+        >
+          Chức năng tài khoản <span aria-hidden="true">☰</span>
+        </button>
+        <div class="sidebar-intro">
+          <span class="sidebar-avatar" id="sidebar-avatar">N</span>
+          <div>
+            <strong id="sidebar-name">N01SPORT</strong
+            ><small id="sidebar-role">Không gian của bạn</small>
+          </div>
+        </div>
         <nav id="navigation" aria-label="Chức năng tài khoản"></nav>
-        <p class="sidebar-note">Lịch rõ ràng.<br />Trải nghiệm trọn vẹn.</p>
+        <div class="sidebar-note">
+          <strong>Đến sân. Hết mình.</strong>
+          <p>Mọi lịch chơi và hoạt động trong cùng một không gian.</p>
+          <a href="/#courts">Khám phá sân →</a>
+        </div>
         <a href="/policies.html">Điều khoản & quyền riêng tư</a>
       </aside>
       <main id="content" tabindex="-1">
         <div class="page-heading">
           <div>
-            <p class="eyebrow">N01SPORT / TÀI KHOẢN</p>
+            <p class="eyebrow" id="workspace-context">
+              N01SPORT / KHÔNG GIAN CỦA BẠN
+            </p>
             <h1 id="title">Đang tải…</h1>
             <p id="subtitle"></p>
           </div>
@@ -56,6 +80,6 @@
       </form>
     </dialog>
     <div id="toast" role="status" aria-live="polite" hidden></div>
-    <script type="module" src="/js/portal.js?v=walk-in-2"></script>
+    <script type="module" src="/js/portal.js"></script>
   </body>
 </html>
