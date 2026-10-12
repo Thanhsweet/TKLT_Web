@@ -27,7 +27,7 @@ export function frontend(t, respond = () => ({})) {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'document');
   const locationDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'location');
   globalThis.location = { search: '', hash: '', href: '' };
-  globalThis.document = { querySelector: element, querySelectorAll: () => [] };
+  globalThis.document = { querySelector: element, querySelectorAll: () => [], addEventListener() {} };
   t.after(() => {
     if (descriptor) Object.defineProperty(globalThis, 'document', descriptor);
     else delete globalThis.document;
