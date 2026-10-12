@@ -2,20 +2,9 @@ import { sportImage, sportIcon } from "./ui.js";
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
-const state = {
-  sports: [],
-  districts: [],
-  courts: [],
-  user: null,
-  resumeBooking: false,
-  selectedCourt: null,
-  selectedSlot: null,
-  activeBooking: null,
-  filters: { sport: "", district: "", q: "" },
-  managementData: null,
-  managementTab: "overview",
-  entityConfig: null,
-};
+import { state } from "./core/state.js";
+import { openBooking as openWalkInBooking, createBooking as createWalkInBooking, selectBookingCourt } from "./bookings.js?v=3.2-walk-in";
+state.resumeBooking = false;
 
 const demoAccounts = {
   customer: ["khach@n01sport.vn", "Khach@123"],
@@ -118,6 +107,7 @@ function isManagement() {
 
 function updateSessionUi() {
   const loggedIn = Boolean(state.user);
+  $("#staff-booking-create").classList.toggle("hidden", state.user?.role !== "receptionist");
   $("#login-button").classList.toggle("hidden", loggedIn);
   $("#profile-button").classList.toggle("hidden", !loggedIn);
   $("#dashboard-link").classList.toggle("hidden", !loggedIn || !isCustomer());
@@ -354,7 +344,12 @@ async function loadSlots() {
   }
 }
 
-function openBooking(courtId) {
+async function openBooking(courtId) {
+  if (state.user?.role === "receptionist") return openWalkInBooking(courtId);
+  $("#offline-booking-fields").classList.add("hidden");
+  $("#promotion-field").classList.remove("hidden");
+  $("#booking-eyebrow").textContent = "ĐẶT SÂN TRỰC TUYẾN";
+  $("#confirm-booking").textContent = "Xác nhận đặt sân";
   state.selectedCourt = state.courts.find((court) => court.id === courtId);
   if (!state.selectedCourt) return;
   $("#booking-court-name").textContent = state.selectedCourt.name;
@@ -369,6 +364,7 @@ function openBooking(courtId) {
 }
 
 async function createBooking() {
+  if (state.user?.role === "receptionist") return createWalkInBooking({ onCreated: () => loadCourts() });
   if (!isCustomer()) {
     state.resumeBooking = true;
     closeDialog("booking-dialog");
@@ -394,6 +390,7 @@ async function createBooking() {
     state.activeBooking = data.booking;
     closeDialog("booking-dialog");
     $("#success-code").textContent = data.booking.booking_code;
+    $("#pay-now").classList.remove("hidden");
     $("#success-detail").textContent =
       `${data.booking.court_name} · ${dateTime(data.booking.start_at)} · ${money(data.booking.total_amount)}. Giữ chỗ trong 10 phút.`;
     showDialog("success-dialog");
@@ -1173,6 +1170,11 @@ async function logout() {
 }
 
 function bindEvents() {
+  $("#staff-booking-create").addEventListener("click", () => openBooking());
+  $("#offline-court").addEventListener("change", async () => {
+    const court = state.offlineCourts.find((c) => c.id === Number($("#offline-court").value));
+    if (court) { selectBookingCourt(court); await loadSlots(); }
+  });
   ["#sort-select", "#indoor-filter", "#budget-filter"].forEach((id) =>
     $(id).addEventListener("change", renderCourts),
   );
@@ -1304,4 +1306,4 @@ async function init() {
   }
 }
 
-init();
+export const ready = init();
